@@ -18,7 +18,7 @@ export function TopBar({
   notifications?: Notification[];
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-border-soft/90 bg-bg-elevated/95 backdrop-blur-md">
+    <header className="sticky top-0 z-20 border-b border-border-soft bg-bg-elevated/98">
       <div className="px-4 sm:px-6 md:px-9 pt-5 sm:pt-7 pb-3 sm:pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">

@@ -57,7 +57,7 @@ function StatChip({
     accent === "rose" ? "border-rose/20" : accent === "blue" ? "border-blue/20" : "border-emerald/20";
 
   return (
-    <Card className={`p-4 min-w-[150px] sm:min-w-0 flex-1 shrink-0 sm:shrink border ${accentRing}`}>
+    <Card className={`p-4 min-w-0 flex-1 border ${accentRing}`}>
       <p className="text-[11.5px] sm:text-[12.5px] text-text-secondary leading-snug">{label}</p>
       <div className="flex items-end justify-between gap-2 mt-2">
         <p className="font-nums text-[17px] sm:text-[20px] font-bold leading-none">{value}</p>
@@ -141,7 +141,7 @@ export function DashboardContent({
           </div>
         </Card>
 
-        <div className="flex gap-2.5 sm:gap-4 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 mt-4 sm:mt-6 pb-0.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 mt-4 sm:mt-6">
           <StatChip
             label="יתרה פתוחה"
             value={formatCurrency(kpis.outstanding)}

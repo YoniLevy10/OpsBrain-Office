@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X, Users, TrendingUp, TrendingDown } from "lucide-react";
 import { BrainMark } from "@/components/brand/BrainMark";
+import { Modal } from "@/components/ui/Modal";
 
 interface SearchResult {
   type: string;
@@ -95,63 +96,58 @@ export function GlobalSearch() {
         <Search className="w-[17px] h-[17px]" />
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 bg-black/25 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
-        >
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-lg card-shadow overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-border-soft">
-              <Search className="w-4 h-4 text-text-tertiary shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="חפש לקוחות, הכנסות, הוצאות..."
-                className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-text-tertiary"
-              />
-              {loading && (
-                <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex shrink-0">
-                  <BrainMark className="w-full h-full" variant="on-dark" />
-                </span>
-              )}
-              <button onClick={() => setOpen(false)} aria-label="סגור" className="text-text-tertiary hover:text-text-primary">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <Modal open={open} onClose={() => setOpen(false)} align="top" panelClassName="max-w-lg">
+        <div className="bg-surface border border-border rounded-2xl card-shadow overflow-hidden">
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border-soft">
+            <Search className="w-4 h-4 text-text-tertiary shrink-0" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="חפש לקוחות, הכנסות, הוצאות..."
+              className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-text-tertiary min-w-0"
+            />
+            {loading && (
+              <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex shrink-0">
+                <BrainMark className="w-full h-full" variant="on-dark" />
+              </span>
+            )}
+            <button onClick={() => setOpen(false)} aria-label="סגור" className="text-text-tertiary hover:text-text-primary shrink-0">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            <div className="max-h-80 overflow-y-auto">
-              {query.length >= 2 && !loading && results.length === 0 && (
-                <p className="text-[13px] text-text-tertiary px-4 py-8 text-center">לא נמצאו תוצאות</p>
-              )}
-              {query.length < 2 && (
-                <p className="text-[13px] text-text-tertiary px-4 py-8 text-center">הקלד לפחות 2 תווים לחיפוש</p>
-              )}
-              {results.map((r) => {
-                const Icon = typeIcons[r.type] ?? Search;
-                return (
-                  <button
-                    key={`${r.type}-${r.id}`}
-                    onClick={() => handleSelect(r.href)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-hover/70 transition-colors text-start border-b border-border-soft last:border-0"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-blue/10 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-blue" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-medium truncate">{r.title}</div>
-                      <div className="text-[11.5px] text-text-tertiary truncate">{r.subtitle}</div>
-                    </div>
-                    <span className="text-[10.5px] font-semibold text-text-tertiary bg-bg px-2 py-0.5 rounded-full shrink-0">
-                      {r.type}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="max-h-80 overflow-y-auto">
+            {query.length >= 2 && !loading && results.length === 0 && (
+              <p className="text-[13px] text-text-tertiary px-4 py-8 text-center">לא נמצאו תוצאות</p>
+            )}
+            {query.length < 2 && (
+              <p className="text-[13px] text-text-tertiary px-4 py-8 text-center">הקלד לפחות 2 תווים לחיפוש</p>
+            )}
+            {results.map((r) => {
+              const Icon = typeIcons[r.type] ?? Search;
+              return (
+                <button
+                  key={`${r.type}-${r.id}`}
+                  onClick={() => handleSelect(r.href)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-hover/70 transition-colors text-start border-b border-border-soft last:border-0"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue/10 flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-blue" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13px] font-medium truncate">{r.title}</div>
+                    <div className="text-[11.5px] text-text-tertiary truncate">{r.subtitle}</div>
+                  </div>
+                  <span className="text-[10.5px] font-semibold text-text-tertiary bg-bg px-2 py-0.5 rounded-full shrink-0">
+                    {r.type}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
-      )}
+      </Modal>
     </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useTransition, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, X, Loader2 } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
 
 export function EditRecordPanel({
   title,
@@ -41,39 +42,34 @@ export function EditRecordPanel({
         <Pencil className="w-3.5 h-3.5" />
       </button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
-          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
-        >
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto card-shadow">
-            <div className="flex items-center justify-between px-5 pt-5 pb-3">
-              <h3 className="text-[16px] font-bold">{title}</h3>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="סגור"
-                className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center text-text-secondary"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <form action={handleSubmit} className="px-5 pb-5 space-y-3.5">
-              {children}
-              {error && (
-                <p className="text-[12.5px] text-rose bg-rose/10 rounded-lg px-3 py-2">{error}</p>
-              )}
-              <button
-                type="submit"
-                disabled={pending}
-                className="w-full flex items-center justify-center gap-2 bg-emerald text-white font-semibold text-[13.5px] py-2.5 rounded-lg hover:bg-emerald/90 transition-colors disabled:opacity-50"
-              >
-                {pending && <Loader2 className="w-4 h-4 animate-spin" />}
-                עדכון
-              </button>
-            </form>
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <div className="bg-surface border border-border rounded-2xl card-shadow">
+          <div className="flex items-center justify-between px-5 pt-5 pb-3">
+            <h3 className="text-[16px] font-bold">{title}</h3>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label="סגור"
+              className="w-8 h-8 rounded-lg hover:bg-surface-hover flex items-center justify-center text-text-secondary"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
+          <form action={handleSubmit} className="px-5 pb-5 space-y-3.5">
+            {children}
+            {error && (
+              <p className="text-[12.5px] text-rose bg-rose/10 rounded-lg px-3 py-2">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={pending}
+              className="w-full flex items-center justify-center gap-2 bg-emerald text-white font-semibold text-[13.5px] py-2.5 rounded-lg hover:bg-emerald/90 transition-colors disabled:opacity-50"
+            >
+              {pending && <Loader2 className="w-4 h-4 animate-spin" />}
+              עדכון
+            </button>
+          </form>
         </div>
-      )}
+      </Modal>
     </>
   );
 }
