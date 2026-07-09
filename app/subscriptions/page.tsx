@@ -1,9 +1,18 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, Badge } from "@/components/ui/Primitives";
-import { subscriptions, formatCurrency } from "@/lib/data";
+import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
+import { formatCurrency } from "@/lib/data";
+import { fetchSubscriptions } from "@/lib/queries";
+import { addSubscription } from "@/app/actions";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
 
-export default function SubscriptionsPage() {
+export const dynamic = "force-dynamic";
+
+const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
+
+export default async function SubscriptionsPage() {
+  const { rows: subscriptions, live } = await fetchSubscriptions();
+
   const monthlyTotal = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
     .reduce((s, x) => s + x.priceILS, 0);
@@ -12,7 +21,26 @@ export default function SubscriptionsPage() {
 
   return (
     <div className="pb-16">
-      <TopBar title="מנויים" subtitle="כל הכלים והתשתיות שאתה משלם עליהם" actionLabel="מנוי חדש" />
+      <TopBar
+        title="מנויים"
+        subtitle="כל הכלים והתשתיות שאתה משלם עליהם"
+        live={live}
+        action={
+          <AddRecordPanel buttonLabel="מנוי חדש" title="הוספת מנוי" action={addSubscription}>
+            <Field label="ספק" name="vendor" required placeholder="לדוגמה: Cursor" />
+            <SelectField label="קטגוריה" name="category" options={categories} />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="מחיר" name="price" type="number" required />
+              <SelectField label="מטבע" name="currency" options={["USD", "ILS"]} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue="3.7" />
+              <SelectField label="מחזור חיוב" name="billing_cycle" options={["חודשי", "שנתי"]} />
+            </div>
+            <Field label="חיוב הבא" name="next_charge" type="date" />
+          </AddRecordPanel>
+        }
+      />
 
       <div className="px-6 md:px-9 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -48,6 +76,11 @@ export default function SubscriptionsPage() {
               </div>
             </Card>
           ))}
+          {subscriptions.length === 0 && (
+            <Card className="p-10 col-span-full text-center text-text-tertiary text-[13px]">
+              אין עדיין מנויים — הוסף את הראשון עם הכפתור למעלה
+            </Card>
+          )}
         </div>
       </div>
     </div>
