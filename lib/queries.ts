@@ -19,7 +19,7 @@ export async function fetchClients(): Promise<{ rows: Client[]; live: boolean }>
   const sb = getSupabase();
   if (!sb) return { rows: mockClients, live: false };
   const { data, error } = await sb
-    .from("clients")
+    .from("ob_clients")
     .select("*")
     .order("created_at", { ascending: false });
   if (error || !data) return { rows: mockClients, live: false };
@@ -42,7 +42,7 @@ export async function fetchIncome(): Promise<{ rows: IncomeEntry[]; live: boolea
   const sb = getSupabase();
   if (!sb) return { rows: mockIncome, live: false };
   const { data, error } = await sb
-    .from("income")
+    .from("ob_income")
     .select("*")
     .order("date", { ascending: false });
   if (error || !data) return { rows: mockIncome, live: false };
@@ -64,7 +64,7 @@ export async function fetchExpenses(): Promise<{ rows: ExpenseEntry[]; live: boo
   const sb = getSupabase();
   if (!sb) return { rows: mockExpenses, live: false };
   const { data, error } = await sb
-    .from("expenses")
+    .from("ob_expenses")
     .select("*")
     .order("date", { ascending: false });
   if (error || !data) return { rows: mockExpenses, live: false };
@@ -85,7 +85,7 @@ export async function fetchSubscriptions(): Promise<{ rows: Subscription[]; live
   const sb = getSupabase();
   if (!sb) return { rows: mockSubscriptions, live: false };
   const { data, error } = await sb
-    .from("subscriptions")
+    .from("ob_subscriptions")
     .select("*")
     .order("next_charge", { ascending: true });
   if (error || !data) return { rows: mockSubscriptions, live: false };

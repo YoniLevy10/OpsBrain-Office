@@ -10,7 +10,7 @@ const NOT_CONFIGURED = "Supabase לא מחובר עדיין — הנתונים �
 export async function addClient(formData: FormData): Promise<ActionResult> {
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
-  const { error } = await sb.from("clients").insert({
+  const { error } = await sb.from("ob_clients").insert({
     company: String(formData.get("company") || "").trim(),
     contact: String(formData.get("contact") || "").trim(),
     email: String(formData.get("email") || "").trim(),
@@ -29,7 +29,7 @@ export async function addClient(formData: FormData): Promise<ActionResult> {
 export async function addIncome(formData: FormData): Promise<ActionResult> {
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
-  const { error } = await sb.from("income").insert({
+  const { error } = await sb.from("ob_income").insert({
     client_name: String(formData.get("client_name") || "").trim(),
     project: String(formData.get("project") || "").trim(),
     amount: Number(formData.get("amount") || 0),
@@ -50,7 +50,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   const amount = Number(formData.get("amount") || 0);
   const currency = String(formData.get("currency") || "ILS");
   const rate = Number(formData.get("rate") || 3.7);
-  const { error } = await sb.from("expenses").insert({
+  const { error } = await sb.from("ob_expenses").insert({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "אחר"),
     amount,
@@ -71,7 +71,7 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
   const price = Number(formData.get("price") || 0);
   const currency = String(formData.get("currency") || "USD");
   const rate = Number(formData.get("rate") || 3.7);
-  const { error } = await sb.from("subscriptions").insert({
+  const { error } = await sb.from("ob_subscriptions").insert({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "תוכנה"),
     price,
