@@ -28,7 +28,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const donutPalette = ["#7BA4F0", "#4AD4A8", "#E0B86A", "#F07B8E", "#9BA3B4", "#9B8AE8", "#5EC8D6"];
+const donutPalette = ["#2F6FED", "#0D9B73", "#C98A1A", "#DC4A62", "#8B95A8", "#7C5FD4", "#1A9FB0"];
 
 export default async function DashboardPage() {
   const [clientsRes, incomeRes, expensesRes, subsRes] = await Promise.all([

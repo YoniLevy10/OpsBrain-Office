@@ -31,11 +31,12 @@ export function CategoryDonut({ data }: { data: Slice[] }) {
             </Pie>
             <Tooltip
               contentStyle={{
-                background: "#171B24",
-                border: "1px solid #262B37",
+                background: "#FFFFFF",
+                border: "1px solid #E2E7EF",
                 borderRadius: 10,
                 fontSize: 12.5,
                 direction: "rtl",
+                boxShadow: "0 4px 12px rgba(26,34,51,0.08)",
               }}
               formatter={(value, name) => [`₪${value}`, name]}
             />

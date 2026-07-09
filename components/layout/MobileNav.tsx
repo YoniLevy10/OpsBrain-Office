@@ -23,7 +23,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border-soft bg-bg-elevated/95 backdrop-blur-lg"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-bg-elevated card-shadow"
       style={{ paddingBottom: "var(--safe-area-bottom)" }}
       aria-label="ניווט ראשי"
     >

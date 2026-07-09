@@ -35,7 +35,7 @@ export function NotificationsButton({ notifications }: { notifications: Notifica
       </button>
 
       {open && (
-        <div className="absolute top-full mt-2 end-0 w-80 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden">
+        <div className="absolute top-full mt-2 end-0 w-80 bg-surface border border-border rounded-xl card-shadow z-50 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border-soft">
             <span className="text-[13px] font-semibold">התראות</span>
             <button onClick={() => setOpen(false)} aria-label="סגור" className="text-text-tertiary hover:text-text-primary">

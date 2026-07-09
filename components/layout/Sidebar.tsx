@@ -24,7 +24,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-l border-border bg-bg-elevated/60 backdrop-blur-sm h-screen sticky top-0">
+    <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-l border-border bg-bg-elevated h-screen sticky top-0 card-shadow">
       <div className="px-6 pt-7 pb-6 flex items-center gap-2.5">
         <div className="relative w-8 h-8 rounded-lg bg-emerald/10 flex items-center justify-center">
           <Activity className="w-4.5 h-4.5 text-emerald" strokeWidth={2.25} />
@@ -74,7 +74,7 @@ export function Sidebar() {
           <Settings className="w-[17px] h-[17px] text-text-tertiary" strokeWidth={2} />
           הגדרות
         </Link>
-        <div className="mt-3 mx-1 px-3 py-3 rounded-xl bg-surface border border-border-soft">
+        <div className="mt-3 mx-1 px-3 py-3 rounded-xl bg-bg border border-border-soft">
           <div className="text-[11px] text-text-tertiary mb-1">מחובר כ־</div>
           <div className="text-[13px] font-semibold">Yoni Levy · OpsBrain</div>
         </div>

@@ -28,7 +28,7 @@ export function Field({
         placeholder={placeholder}
         defaultValue={defaultValue}
         step={type === "number" ? "0.01" : undefined}
-        className="mt-1 w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/60 transition-colors placeholder:text-text-tertiary"
+        className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50 focus:ring-2 focus:ring-emerald/10 transition-colors placeholder:text-text-tertiary"
       />
     </label>
   );
@@ -51,7 +51,7 @@ export function SelectField({
       <select
         name={name}
         defaultValue={defaultValue ?? options[0]}
-        className="mt-1 w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/60 transition-colors"
+        className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50 focus:ring-2 focus:ring-emerald/10 transition-colors"
       >
         {options.map((o) => (
           <option key={o} value={o}>
@@ -94,7 +94,7 @@ export function AddRecordPanel({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 bg-emerald text-bg font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+        className="flex items-center gap-1.5 bg-emerald text-white font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:bg-emerald/90 transition-colors shrink-0"
       >
         <Plus className="w-4 h-4" strokeWidth={2.5} />
         {buttonLabel}
@@ -102,10 +102,10 @@ export function AddRecordPanel({
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="bg-surface border border-border rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto card-shadow">
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
               <h3 className="text-[16px] font-bold">{title}</h3>
               <button
@@ -124,7 +124,7 @@ export function AddRecordPanel({
               <button
                 type="submit"
                 disabled={pending}
-                className="w-full flex items-center justify-center gap-2 bg-emerald text-bg font-semibold text-[13.5px] py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 bg-emerald text-white font-semibold text-[13.5px] py-2.5 rounded-lg hover:bg-emerald/90 transition-colors disabled:opacity-50"
               >
                 {pending && <Loader2 className="w-4 h-4 animate-spin" />}
                 שמירה

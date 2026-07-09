@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   applicationName: "OpsBrain Finance",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "OpsBrain",
   },
   formatDetection: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0F1117",
+  themeColor: "#FFFFFF",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

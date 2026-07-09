@@ -92,7 +92,7 @@ export function DashboardContent({
           <KpiCard label="לקוחות פעילים" value={String(kpis.activeClients)} icon={Users} accent="blue" />
         </div>
 
-        <Card className="p-5 flex items-start gap-4 border-emerald/20 bg-gradient-to-l from-emerald/[0.06] to-transparent mt-6">
+        <Card className="p-5 flex items-start gap-4 border-emerald/25 bg-emerald/[0.04] mt-6">
           <div className="w-9 h-9 rounded-lg bg-emerald/10 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles className="w-[18px] h-[18px] text-emerald" strokeWidth={2} />
           </div>

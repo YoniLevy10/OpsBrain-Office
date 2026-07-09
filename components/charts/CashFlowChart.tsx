@@ -16,6 +16,16 @@ interface Point {
   expenses: number;
 }
 
+const CHART = {
+  income: "#0D9B73",
+  expense: "#DC4A62",
+  grid: "#E2E7EF",
+  tick: "#5A6578",
+  tooltipBg: "#FFFFFF",
+  tooltipBorder: "#E2E7EF",
+  tooltipLabel: "#1A2233",
+};
+
 export function CashFlowChart({ data }: { data: Point[] }) {
   return (
     <div className="h-64 w-full -ms-3">
@@ -23,23 +33,23 @@ export function CashFlowChart({ data }: { data: Point[] }) {
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4AD4A8" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#4AD4A8" stopOpacity={0} />
+              <stop offset="0%" stopColor={CHART.income} stopOpacity={0.25} />
+              <stop offset="100%" stopColor={CHART.income} stopOpacity={0} />
             </linearGradient>
             <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F07B8E" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#F07B8E" stopOpacity={0} />
+              <stop offset="0%" stopColor={CHART.expense} stopOpacity={0.18} />
+              <stop offset="100%" stopColor={CHART.expense} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2D3344" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
           <XAxis
             dataKey="month"
-            tick={{ fill: "#A8B0C0", fontSize: 12 }}
-            axisLine={{ stroke: "#2D3344" }}
+            tick={{ fill: CHART.tick, fontSize: 12 }}
+            axisLine={{ stroke: CHART.grid }}
             tickLine={false}
           />
           <YAxis
-            tick={{ fill: "#A8B0C0", fontSize: 11 }}
+            tick={{ fill: CHART.tick, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             width={44}
@@ -47,13 +57,14 @@ export function CashFlowChart({ data }: { data: Point[] }) {
           />
           <Tooltip
             contentStyle={{
-              background: "#1C1F2A",
-              border: "1px solid #2D3344",
+              background: CHART.tooltipBg,
+              border: `1px solid ${CHART.tooltipBorder}`,
               borderRadius: 10,
               fontSize: 12.5,
               direction: "rtl",
+              boxShadow: "0 4px 12px rgba(26,34,51,0.08)",
             }}
-            labelStyle={{ color: "#E8EAF0", fontWeight: 600, marginBottom: 4 }}
+            labelStyle={{ color: CHART.tooltipLabel, fontWeight: 600, marginBottom: 4 }}
             formatter={(value, name) => [
               `₪${Number(value).toLocaleString()}`,
               name === "income" ? "הכנסות" : "הוצאות",
@@ -62,14 +73,14 @@ export function CashFlowChart({ data }: { data: Point[] }) {
           <Area
             type="monotone"
             dataKey="income"
-            stroke="#4AD4A8"
+            stroke={CHART.income}
             strokeWidth={2.5}
             fill="url(#incomeGradient)"
           />
           <Area
             type="monotone"
             dataKey="expenses"
-            stroke="#F07B8E"
+            stroke={CHART.expense}
             strokeWidth={2}
             fill="url(#expenseGradient)"
           />
