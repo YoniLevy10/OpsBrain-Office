@@ -2,7 +2,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, Badge } from "@/components/ui/Primitives";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
-import { fetchSubscriptions, fetchIncome } from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import { addSubscription } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { getUsdRate } from "@/lib/meta";
@@ -10,19 +10,15 @@ import { RefreshCw, Calendar, Layers } from "lucide-react";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { SubscriptionEditButton } from "@/components/records/SubscriptionEditButton";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 45;
 
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
 
 export default async function SubscriptionsPage() {
-  const [subsRes, incomeRes, usdRate] = await Promise.all([
-    fetchSubscriptions(),
-    fetchIncome(),
-    getUsdRate(),
-  ]);
-  const live = isAllLive([subsRes.live, incomeRes.live]);
-  const subscriptions = subsRes.rows;
-  const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subscriptions);
+  const [bundle, usdRate] = await Promise.all([getFinanceBundle(), getUsdRate()]);
+  const live = isAllLive([bundle.live.subscriptions, bundle.live.income]);
+  const subscriptions = bundle.subscriptions;
+  const notifications = buildNotifications(withResolvedStatus(bundle.income), subscriptions);
 
   const monthlyTotal = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")

@@ -2,12 +2,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, SectionHeading } from "@/components/ui/Primitives";
 import { MonthPicker } from "@/components/ui/MonthPicker";
 import { formatCurrency } from "@/lib/data";
-import {
-  fetchClients,
-  fetchIncome,
-  fetchExpenses,
-  fetchSubscriptions,
-} from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import {
   withResolvedStatus,
   filterIncomeByMonth,
@@ -21,7 +16,7 @@ import {
 import { FileSpreadsheet, Download, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import Link from "next/link";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 45;
 
 function ExportButton({ href, label }: { href: string; label: string }) {
   return (
@@ -51,21 +46,20 @@ export default async function ReportsPage({
     params.month && /^\d{4}-\d{2}$/.test(params.month)
       ? params.month
       : getCurrentMonthKey();
-  const [clientsRes, incomeRes, expensesRes, subsRes] = await Promise.all([
-    fetchClients(),
-    fetchIncome(),
-    fetchExpenses(),
-    fetchSubscriptions(),
+  const bundle = await getFinanceBundle();
+  const live = isAllLive([
+    bundle.live.clients,
+    bundle.live.income,
+    bundle.live.expenses,
+    bundle.live.subscriptions,
   ]);
-
-  const live = isAllLive([clientsRes.live, incomeRes.live, expensesRes.live, subsRes.live]);
-  const income = withResolvedStatus(incomeRes.rows);
+  const income = withResolvedStatus(bundle.income);
   const monthIncome = filterIncomeByMonth(income, month);
-  const monthExpenses = filterExpensesByMonth(expensesRes.rows, month);
+  const monthExpenses = filterExpensesByMonth(bundle.expenses, month);
   const paid = sumPaidIncome(monthIncome);
   const expTotal = sumExpenses(monthExpenses);
   const profit = paid - expTotal;
-  const recurring = subsRes.rows
+  const recurring = bundle.subscriptions
     .filter((s) => s.status === "פעיל")
     .reduce((s, x) => {
       if (x.billingCycle === "חודשי") return s + x.priceILS;
@@ -109,15 +103,15 @@ export default async function ReportsPage({
               <div className="text-[12px] text-text-tertiary mt-1">רשומות הכנסה</div>
             </div>
             <div>
-              <div className="font-nums text-[22px] font-bold">{expensesRes.rows.length}</div>
+              <div className="font-nums text-[22px] font-bold">{bundle.expenses.length}</div>
               <div className="text-[12px] text-text-tertiary mt-1">רשומות הוצאה</div>
             </div>
             <div>
-              <div className="font-nums text-[22px] font-bold">{clientsRes.rows.length}</div>
+              <div className="font-nums text-[22px] font-bold">{bundle.clients.length}</div>
               <div className="text-[12px] text-text-tertiary mt-1">לקוחות</div>
             </div>
             <div>
-              <div className="font-nums text-[22px] font-bold">{subsRes.rows.length}</div>
+              <div className="font-nums text-[22px] font-bold">{bundle.subscriptions.length}</div>
               <div className="text-[12px] text-text-tertiary mt-1">מנויים</div>
             </div>
           </div>

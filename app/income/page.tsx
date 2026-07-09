@@ -2,21 +2,17 @@ import { TopBar } from "@/components/layout/TopBar";
 import { IncomeList } from "@/components/income/IncomeList";
 import { ClientSelectField } from "@/components/income/ClientSelectField";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
-import { fetchIncome, fetchSubscriptions, fetchClients } from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import { addIncome } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 45;
 
 export default async function IncomePage() {
-  const [incomeRes, subsRes, clientsRes] = await Promise.all([
-    fetchIncome(),
-    fetchSubscriptions(),
-    fetchClients(),
-  ]);
-  const live = isAllLive([incomeRes.live, subsRes.live]);
-  const incomeEntries = withResolvedStatus(incomeRes.rows);
-  const notifications = buildNotifications(incomeEntries, subsRes.rows);
+  const bundle = await getFinanceBundle();
+  const live = isAllLive([bundle.live.income, bundle.live.subscriptions]);
+  const incomeEntries = withResolvedStatus(bundle.income);
+  const notifications = buildNotifications(incomeEntries, bundle.subscriptions);
 
   return (
     <div>
@@ -27,7 +23,7 @@ export default async function IncomePage() {
         notifications={notifications}
         action={
           <AddRecordPanel buttonLabel="הכנסה חדשה" title="הוספת הכנסה" action={addIncome}>
-            <ClientSelectField clients={clientsRes.rows.map((c) => ({ id: c.id, company: c.company }))} />
+            <ClientSelectField clients={bundle.clients.map((c) => ({ id: c.id, company: c.company }))} />
             <Field label="פרויקט / תיאור" name="project" placeholder="לדוגמה: Bamakor – מנוי חודשי" />
             <div className="grid grid-cols-2 gap-3">
               <Field label="סכום" name="amount" type="number" required />

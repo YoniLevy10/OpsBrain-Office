@@ -1,12 +1,22 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag, revalidateTag } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { getUsdRate, setUsdRate } from "@/lib/meta";
+import { FINANCE_CACHE_TAG, META_CACHE_TAG } from "@/lib/cache-tags";
 
 type ActionResult = { ok: boolean; error?: string };
 
 const NOT_CONFIGURED = "Supabase לא מחובר עדיין — הנתונים במצב דמו";
+
+function invalidateFinance() {
+  updateTag(FINANCE_CACHE_TAG);
+  revalidatePath("/");
+}
+
+function invalidateMeta() {
+  updateTag(META_CACHE_TAG);
+}
 
 export async function addClient(formData: FormData): Promise<ActionResult> {
   const sb = getSupabase();
@@ -22,8 +32,8 @@ export async function addClient(formData: FormData): Promise<ActionResult> {
     status: String(formData.get("status") || "פעיל"),
   });
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/clients");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -40,8 +50,8 @@ export async function addIncome(formData: FormData): Promise<ActionResult> {
     date: String(formData.get("date") || new Date().toISOString().slice(0, 10)),
   });
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/income");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -61,8 +71,8 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
     recurring: formData.get("recurring") === "on",
   });
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/expenses");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -83,8 +93,8 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
     status: "פעיל",
   });
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/subscriptions");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -93,8 +103,8 @@ export async function updateIncomeStatus(id: string, status: string): Promise<Ac
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
   const { error } = await sb.from("ob_income").update({ status }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/income");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -113,8 +123,8 @@ export async function updateClient(formData: FormData): Promise<ActionResult> {
     status: String(formData.get("status") || "פעיל"),
   }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/clients");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -132,8 +142,8 @@ export async function updateIncome(formData: FormData): Promise<ActionResult> {
     date: String(formData.get("date") || ""),
   }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/income");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -154,8 +164,8 @@ export async function updateExpense(formData: FormData): Promise<ActionResult> {
     recurring: formData.get("recurring") === "on",
   }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/expenses");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -177,8 +187,8 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
     status: String(formData.get("status") || "פעיל"),
   }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/subscriptions");
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -195,8 +205,8 @@ export async function deleteRecord(table: string, id: string): Promise<ActionRes
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
   const { error } = await sb.from(dbTable).delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+  invalidateFinance();
   revalidatePath("/" + (table === "clients" ? "clients" : table));
-  revalidatePath("/");
   return { ok: true };
 }
 
@@ -205,6 +215,7 @@ export async function saveUsdRate(rate: number): Promise<ActionResult> {
     return { ok: false, error: "שער לא תקין" };
   }
   await setUsdRate(rate);
+  invalidateMeta();
   revalidatePath("/settings");
   revalidatePath("/expenses");
   revalidatePath("/subscriptions");

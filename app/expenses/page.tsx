@@ -1,24 +1,19 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { ExpenseList } from "@/components/expenses/ExpenseList";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
-import { fetchExpenses, fetchIncome, fetchSubscriptions } from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import { addExpense } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { getUsdRate } from "@/lib/meta";
 
-export const dynamic = "force-dynamic";
-
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שכר", "שיווק", "הנהלת חשבונות", "מיסים", "אחר"];
 
+export const revalidate = 45;
+
 export default async function ExpensesPage() {
-  const [expensesRes, incomeRes, subsRes, usdRate] = await Promise.all([
-    fetchExpenses(),
-    fetchIncome(),
-    fetchSubscriptions(),
-    getUsdRate(),
-  ]);
-  const live = isAllLive([expensesRes.live, incomeRes.live, subsRes.live]);
-  const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subsRes.rows);
+  const [bundle, usdRate] = await Promise.all([getFinanceBundle(), getUsdRate()]);
+  const live = isAllLive([bundle.live.expenses, bundle.live.income, bundle.live.subscriptions]);
+  const notifications = buildNotifications(withResolvedStatus(bundle.income), bundle.subscriptions);
 
   return (
     <div>
@@ -48,7 +43,7 @@ export default async function ExpensesPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9">
-        <ExpenseList entries={expensesRes.rows} />
+        <ExpenseList entries={bundle.expenses} />
       </div>
     </div>
   );

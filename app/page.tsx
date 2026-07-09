@@ -3,12 +3,7 @@ import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { MonthPicker } from "@/components/ui/MonthPicker";
 import { formatCurrency } from "@/lib/data";
-import {
-  fetchClients,
-  fetchIncome,
-  fetchExpenses,
-  fetchSubscriptions,
-} from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import {
   withResolvedStatus,
   filterIncomeByMonth,
@@ -28,7 +23,7 @@ import {
   formatMonthLabel,
 } from "@/lib/analytics";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 45;
 
 const donutPalette = ["#2F6FED", "#0D9B73", "#C98A1A", "#DC4A62", "#8B95A8", "#7C5FD4", "#1A9FB0"];
 
@@ -38,18 +33,17 @@ export default async function DashboardPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const params = await searchParams;
-  const [clientsRes, incomeRes, expensesRes, subsRes] = await Promise.all([
-    fetchClients(),
-    fetchIncome(),
-    fetchExpenses(),
-    fetchSubscriptions(),
+  const bundle = await getFinanceBundle();
+  const live = isAllLive([
+    bundle.live.clients,
+    bundle.live.income,
+    bundle.live.expenses,
+    bundle.live.subscriptions,
   ]);
-
-  const live = isAllLive([clientsRes.live, incomeRes.live, expensesRes.live, subsRes.live]);
-  const incomeEntries = withResolvedStatus(incomeRes.rows);
-  const expenseEntries = expensesRes.rows;
-  const subscriptions = subsRes.rows;
-  const clients = enrichClients(clientsRes.rows, incomeEntries);
+  const incomeEntries = withResolvedStatus(bundle.income);
+  const expenseEntries = bundle.expenses;
+  const subscriptions = bundle.subscriptions;
+  const clients = enrichClients(bundle.clients, incomeEntries);
 
   const currentMonth =
     params.month && /^\d{4}-\d{2}$/.test(params.month)
