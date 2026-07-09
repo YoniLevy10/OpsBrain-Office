@@ -1,16 +1,19 @@
 import { ReactNode } from "react";
-import { Bell } from "lucide-react";
+import { NotificationsButton } from "@/components/layout/NotificationsButton";
+import type { Notification } from "@/lib/analytics";
 
 export function TopBar({
   title,
   subtitle,
   action,
   live,
+  notifications = [],
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   live?: boolean;
+  notifications?: Notification[];
 }) {
   return (
     <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 md:px-9 pt-6 sm:pt-8 pb-4 sm:pb-6">
@@ -34,12 +37,7 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <button
-          aria-label="התראות"
-          className="w-9 h-9 rounded-lg bg-surface border border-border-soft flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
-        >
-          <Bell className="w-[17px] h-[17px]" strokeWidth={2} />
-        </button>
+        <NotificationsButton notifications={notifications} />
         {action}
       </div>
     </header>

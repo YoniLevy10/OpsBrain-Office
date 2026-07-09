@@ -88,11 +88,17 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
 }
 
 export async function deleteRecord(table: string, id: string): Promise<ActionResult> {
-  const allowed = ["clients", "income", "expenses", "subscriptions"];
-  if (!allowed.includes(table)) return { ok: false, error: "טבלה לא חוקית" };
+  const tableMap: Record<string, string> = {
+    clients: "ob_clients",
+    income: "ob_income",
+    expenses: "ob_expenses",
+    subscriptions: "ob_subscriptions",
+  };
+  const dbTable = tableMap[table];
+  if (!dbTable) return { ok: false, error: "טבלה לא חוקית" };
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
-  const { error } = await sb.from(table).delete().eq("id", id);
+  const { error } = await sb.from(dbTable).delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath("/" + (table === "clients" ? "clients" : table));
   revalidatePath("/");

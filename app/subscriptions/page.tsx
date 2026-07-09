@@ -2,8 +2,9 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, Badge } from "@/components/ui/Primitives";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
-import { fetchSubscriptions } from "@/lib/queries";
+import { fetchSubscriptions, fetchIncome } from "@/lib/queries";
 import { addSubscription } from "@/app/actions";
+import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,10 @@ export const dynamic = "force-dynamic";
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
 
 export default async function SubscriptionsPage() {
-  const { rows: subscriptions, live } = await fetchSubscriptions();
+  const [subsRes, incomeRes] = await Promise.all([fetchSubscriptions(), fetchIncome()]);
+  const live = isAllLive([subsRes.live, incomeRes.live]);
+  const subscriptions = subsRes.rows;
+  const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subscriptions);
 
   const monthlyTotal = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
@@ -25,6 +29,7 @@ export default async function SubscriptionsPage() {
         title="מנויים"
         subtitle="כל הכלים והתשתיות שאתה משלם עליהם"
         live={live}
+        notifications={notifications}
         action={
           <AddRecordPanel buttonLabel="מנוי חדש" title="הוספת מנוי" action={addSubscription}>
             <Field label="ספק" name="vendor" required placeholder="לדוגמה: Cursor" />
