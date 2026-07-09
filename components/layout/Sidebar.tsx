@@ -71,10 +71,20 @@ export function Sidebar() {
       <div className="px-3 pb-4">
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] text-text-secondary hover:bg-surface/60 hover:text-text-primary transition-colors"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-colors ${
+            pathname === "/settings"
+              ? "bg-surface text-text-primary font-semibold"
+              : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"
+          }`}
         >
-          <Settings className="w-[17px] h-[17px] text-text-tertiary" strokeWidth={2} />
+          <Settings
+            className={`w-[17px] h-[17px] ${pathname === "/settings" ? "text-emerald" : "text-text-tertiary"}`}
+            strokeWidth={2}
+          />
           הגדרות
+          {pathname === "/settings" && (
+            <span className="mr-auto w-1 h-1 rounded-full bg-emerald" />
+          )}
         </Link>
         <div className="mt-3 mx-1 px-3 py-3 rounded-xl bg-bg border border-border-soft">
           <div className="text-[11px] text-text-tertiary mb-1">מחובר כ־</div>

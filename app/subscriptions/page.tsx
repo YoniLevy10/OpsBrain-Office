@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/data";
 import { fetchSubscriptions, fetchIncome } from "@/lib/queries";
 import { addSubscription } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
+import { getUsdRate } from "@/lib/meta";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { SubscriptionEditButton } from "@/components/records/SubscriptionEditButton";
@@ -14,7 +15,11 @@ export const dynamic = "force-dynamic";
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
 
 export default async function SubscriptionsPage() {
-  const [subsRes, incomeRes] = await Promise.all([fetchSubscriptions(), fetchIncome()]);
+  const [subsRes, incomeRes, usdRate] = await Promise.all([
+    fetchSubscriptions(),
+    fetchIncome(),
+    getUsdRate(),
+  ]);
   const live = isAllLive([subsRes.live, incomeRes.live]);
   const subscriptions = subsRes.rows;
   const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subscriptions);
@@ -22,7 +27,10 @@ export default async function SubscriptionsPage() {
   const monthlyTotal = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
     .reduce((s, x) => s + x.priceILS, 0);
-  const annualProjection = monthlyTotal * 12;
+  const yearlyMonthlyEquiv = subscriptions
+    .filter((s) => s.status === "פעיל" && s.billingCycle === "שנתי")
+    .reduce((s, x) => s + Math.round(x.priceILS / 12), 0);
+  const annualProjection = (monthlyTotal + yearlyMonthlyEquiv) * 12;
   const activeCount = subscriptions.filter((s) => s.status === "פעיל").length;
 
   return (
@@ -41,7 +49,7 @@ export default async function SubscriptionsPage() {
               <SelectField label="מטבע" name="currency" options={["USD", "ILS"]} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue="3.7" />
+              <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue={String(usdRate)} />
               <SelectField label="מחזור חיוב" name="billing_cycle" options={["חודשי", "שנתי"]} />
             </div>
             <Field label="חיוב הבא" name="next_charge" type="date" />

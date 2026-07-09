@@ -39,7 +39,7 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
   const tabs = [
     { id: "all", label: "הכל", count: entries.length },
     { id: "recurring", label: "חוזרות", count: entries.filter((e) => e.recurring).length },
-    ...categories.slice(0, 4).map((c) => ({
+    ...categories.map((c) => ({
       id: c,
       label: c,
       count: entries.filter((e) => e.category === c).length,

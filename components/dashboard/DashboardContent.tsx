@@ -25,6 +25,7 @@ interface DashboardContentProps {
   cashFlowSeries: CashFlowPoint[];
   expenseByCategory: { name: string; value: number; color: string }[];
   insights: string[];
+  monthLabel: string;
   kpis: {
     income: number;
     incomeDelta?: string;
@@ -47,12 +48,14 @@ export function DashboardContent({
   cashFlowSeries,
   expenseByCategory,
   insights,
+  monthLabel,
   kpis,
 }: DashboardContentProps) {
   const [tab, setTab] = useState("overview");
 
+  const today = new Date().toISOString().slice(0, 10);
   const upcomingSubs = [...subscriptions]
-    .filter((s) => s.status === "פעיל")
+    .filter((s) => s.status === "פעיל" && s.nextCharge >= today)
     .sort((a, b) => (a.nextCharge > b.nextCharge ? 1 : -1))
     .slice(0, 4);
 
@@ -85,6 +88,7 @@ export function DashboardContent({
             value={formatCurrency(kpis.expenses)}
             delta={kpis.expensesDelta}
             deltaDirection={kpis.expensesDeltaDir}
+            deltaInvert
             icon={TrendingDown}
             accent="rose"
           />
@@ -108,14 +112,14 @@ export function DashboardContent({
               <div className="text-[13px] text-text-secondary">יתרה פתוחה מלקוחות</div>
               <div className="font-nums text-[20px] font-bold mt-1">{formatCurrency(kpis.outstanding)}</div>
             </div>
-            <Badge label={kpis.outstanding > 0 ? "ממתין" : "פעיל"} />
+            <Badge label={kpis.outstanding > 0 ? "פתוח" : "—"} />
           </Card>
           <Card className="p-5 flex items-center justify-between">
             <div>
               <div className="text-[13px] text-text-secondary">חשבוניות באיחור</div>
               <div className="font-nums text-[20px] font-bold mt-1">{formatCurrency(kpis.overdueSum)}</div>
             </div>
-            <Badge label={kpis.overdueSum > 0 ? "באיחור" : "פעיל"} />
+            {kpis.overdueSum > 0 ? <Badge label="באיחור" /> : null}
           </Card>
           <Card className="p-5 flex items-center justify-between">
             <div>
@@ -140,7 +144,7 @@ export function DashboardContent({
             )}
           </Card>
           <Card className="p-5">
-            <SectionHeading title="פילוח הוצאות" subtitle="לפי קטגוריה, החודש הנוכחי" />
+            <SectionHeading title="פילוח הוצאות" subtitle={`לפי קטגוריה, ${monthLabel}`} />
             {expenseByCategory.length > 0 ? (
               <CategoryDonut data={expenseByCategory} />
             ) : (

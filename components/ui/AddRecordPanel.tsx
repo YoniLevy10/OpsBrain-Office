@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X, Loader2 } from "lucide-react";
 
 export function Field({
@@ -77,6 +78,7 @@ export function AddRecordPanel({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   function handleSubmit(formData: FormData) {
     setError(null);
@@ -84,6 +86,7 @@ export function AddRecordPanel({
       const result = await action(formData);
       if (result.ok) {
         setOpen(false);
+        router.refresh();
       } else {
         setError(result.error ?? "שגיאה לא ידועה");
       }

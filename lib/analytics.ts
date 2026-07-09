@@ -7,9 +7,9 @@ const HEBREW_MONTHS = [
 
 export function getMonthKey(dateStr: string): string {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const [y, m] = dateStr.slice(0, 10).split("-").map(Number);
+  if (!y || !m) return "";
+  return `${y}-${String(m).padStart(2, "0")}`;
 }
 
 export function getCurrentMonthKey(): string {
@@ -169,6 +169,7 @@ export interface Notification {
   title: string;
   body: string;
   amount?: number;
+  href?: string;
 }
 
 export function buildNotifications(
@@ -185,6 +186,7 @@ export function buildNotifications(
       title: `חשבונית באיחור — ${i.clientName}`,
       body: i.project || i.invoiceNumber,
       amount: i.amount,
+      href: "/income",
     });
   }
 
@@ -199,6 +201,7 @@ export function buildNotifications(
         title: `חיוב קרוב — ${s.vendor}`,
         body: `בתאריך ${s.nextCharge}`,
         amount: s.priceILS,
+        href: "/subscriptions",
       });
     }
   }

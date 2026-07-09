@@ -26,6 +26,13 @@ const CHART = {
   tooltipLabel: "#1A2233",
 };
 
+function formatYAxis(value: number): string {
+  const n = Number(value);
+  if (n === 0) return "₪0";
+  if (Math.abs(n) >= 1000) return `₪${Math.round(n / 1000)}k`;
+  return `₪${n.toLocaleString("he-IL")}`;
+}
+
 export function CashFlowChart({ data }: { data: Point[] }) {
   return (
     <div className="h-64 w-full -ms-3">
@@ -53,7 +60,7 @@ export function CashFlowChart({ data }: { data: Point[] }) {
             axisLine={false}
             tickLine={false}
             width={44}
-            tickFormatter={(v) => `₪${v / 1000}k`}
+            tickFormatter={formatYAxis}
           />
           <Tooltip
             contentStyle={{

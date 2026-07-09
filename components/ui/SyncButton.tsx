@@ -32,11 +32,11 @@ export function SyncButton() {
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
       {message && (
         <span
-          className={`hidden sm:inline text-[12px] max-w-48 lg:max-w-72 truncate ${
-            state === "error" ? "text-rose" : "text-emerald"
+          className={`text-[11.5px] sm:text-[12px] max-w-full sm:max-w-48 lg:max-w-72 truncate px-2 py-1 rounded-lg ${
+            state === "error" ? "text-rose bg-rose/10" : "text-emerald bg-emerald/10"
           }`}
           title={message}
         >

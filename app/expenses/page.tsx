@@ -4,16 +4,18 @@ import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPan
 import { fetchExpenses, fetchIncome, fetchSubscriptions } from "@/lib/queries";
 import { addExpense } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
+import { getUsdRate } from "@/lib/meta";
 
 export const dynamic = "force-dynamic";
 
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שכר", "שיווק", "הנהלת חשבונות", "מיסים", "אחר"];
 
 export default async function ExpensesPage() {
-  const [expensesRes, incomeRes, subsRes] = await Promise.all([
+  const [expensesRes, incomeRes, subsRes, usdRate] = await Promise.all([
     fetchExpenses(),
     fetchIncome(),
     fetchSubscriptions(),
+    getUsdRate(),
   ]);
   const live = isAllLive([expensesRes.live, incomeRes.live, subsRes.live]);
   const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subsRes.rows);
@@ -34,7 +36,7 @@ export default async function ExpensesPage() {
               <SelectField label="מטבע" name="currency" options={["ILS", "USD"]} />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue="3.7" />
+              <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue={String(usdRate)} />
               <Field label="תאריך" name="date" type="date" />
             </div>
             <label className="flex items-center gap-2 text-[13px] text-text-secondary">

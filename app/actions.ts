@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
+import { getUsdRate, setUsdRate } from "@/lib/meta";
 
 type ActionResult = { ok: boolean; error?: string };
 
@@ -49,7 +50,7 @@ export async function addExpense(formData: FormData): Promise<ActionResult> {
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
   const amount = Number(formData.get("amount") || 0);
   const currency = String(formData.get("currency") || "ILS");
-  const rate = Number(formData.get("rate") || 3.7);
+  const rate = Number(formData.get("rate") || 0) || (await getUsdRate());
   const { error } = await sb.from("ob_expenses").insert({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "אחר"),
@@ -70,7 +71,7 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
   const price = Number(formData.get("price") || 0);
   const currency = String(formData.get("currency") || "USD");
-  const rate = Number(formData.get("rate") || 3.7);
+  const rate = Number(formData.get("rate") || 0) || (await getUsdRate());
   const { error } = await sb.from("ob_subscriptions").insert({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "תוכנה"),
@@ -142,7 +143,7 @@ export async function updateExpense(formData: FormData): Promise<ActionResult> {
   const id = String(formData.get("id"));
   const amount = Number(formData.get("amount") || 0);
   const currency = String(formData.get("currency") || "ILS");
-  const rate = Number(formData.get("rate") || 3.7);
+  const rate = Number(formData.get("rate") || 0) || (await getUsdRate());
   const { error } = await sb.from("ob_expenses").update({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "אחר"),
@@ -164,7 +165,7 @@ export async function updateSubscription(formData: FormData): Promise<ActionResu
   const id = String(formData.get("id"));
   const price = Number(formData.get("price") || 0);
   const currency = String(formData.get("currency") || "USD");
-  const rate = Number(formData.get("rate") || 3.7);
+  const rate = Number(formData.get("rate") || 0) || (await getUsdRate());
   const { error } = await sb.from("ob_subscriptions").update({
     vendor: String(formData.get("vendor") || "").trim(),
     category: String(formData.get("category") || "תוכנה"),
@@ -196,5 +197,16 @@ export async function deleteRecord(table: string, id: string): Promise<ActionRes
   if (error) return { ok: false, error: error.message };
   revalidatePath("/" + (table === "clients" ? "clients" : table));
   revalidatePath("/");
+  return { ok: true };
+}
+
+export async function saveUsdRate(rate: number): Promise<ActionResult> {
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return { ok: false, error: "שער לא תקין" };
+  }
+  await setUsdRate(rate);
+  revalidatePath("/settings");
+  revalidatePath("/expenses");
+  revalidatePath("/subscriptions");
   return { ok: true };
 }

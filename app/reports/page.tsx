@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, SectionHeading } from "@/components/ui/Primitives";
+import { MonthPicker } from "@/components/ui/MonthPicker";
 import { formatCurrency } from "@/lib/data";
 import {
   fetchClients,
@@ -40,8 +41,16 @@ function ExportButton({ href, label }: { href: string; label: string }) {
   );
 }
 
-export default async function ReportsPage() {
-  const month = getCurrentMonthKey();
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const params = await searchParams;
+  const month =
+    params.month && /^\d{4}-\d{2}$/.test(params.month)
+      ? params.month
+      : getCurrentMonthKey();
   const [clientsRes, incomeRes, expensesRes, subsRes] = await Promise.all([
     fetchClients(),
     fetchIncome(),
@@ -57,8 +66,11 @@ export default async function ReportsPage() {
   const expTotal = sumExpenses(monthExpenses);
   const profit = paid - expTotal;
   const recurring = subsRes.rows
-    .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
-    .reduce((s, x) => s + x.priceILS, 0);
+    .filter((s) => s.status === "פעיל")
+    .reduce((s, x) => {
+      if (x.billingCycle === "חודשי") return s + x.priceILS;
+      return s + Math.round(x.priceILS / 12);
+    }, 0);
 
   return (
     <div>
@@ -69,6 +81,9 @@ export default async function ReportsPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <div className="flex justify-end">
+          <MonthPicker month={month} />
+        </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KpiCard label="הכנסות ששולמו" value={formatCurrency(paid)} icon={TrendingUp} accent="emerald" />
           <KpiCard label="הוצאות" value={formatCurrency(expTotal)} icon={TrendingDown} accent="rose" />
