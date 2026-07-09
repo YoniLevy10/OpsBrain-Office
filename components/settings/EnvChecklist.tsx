@@ -39,9 +39,18 @@ export function EnvChecklist() {
           </div>
         ))}
       </div>
-      <div className="mt-4 p-3 rounded-lg bg-bg text-[12px] text-text-secondary leading-relaxed">
-        <strong className="text-text-primary">אופציונלי:</strong>{" "}
-        <code className="text-[11px]">GREENINVOICE_SANDBOX=true</code> לסביבת בדיקות של חשבונית ירוקה.
+      <div className="mt-4 p-3 rounded-lg bg-bg text-[12px] text-text-secondary leading-relaxed space-y-1">
+        <p>
+          <strong className="text-text-primary">חשבונית ירוקה:</strong> מנוי Best+ · מפתחות ב־
+          <a href="https://app.greeninvoice.co.il" className="text-emerald hover:underline" target="_blank" rel="noreferrer">
+            app.greeninvoice.co.il
+          </a>
+          {" "}→ המשתמש שלי → כלי מפתחים → API
+        </p>
+        <p>
+          <strong className="text-text-primary">אופציונלי:</strong>{" "}
+          <code className="text-[11px]">GREENINVOICE_SANDBOX=true</code> רק עם מפתחות sandbox (לא production).
+        </p>
       </div>
     </Card>
   );

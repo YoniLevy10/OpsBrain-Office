@@ -3,7 +3,7 @@ import { Card, Badge, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
-import { fetchClients, fetchIncome, fetchSubscriptions } from "@/lib/queries";
+import { getFinanceBundle } from "@/lib/queries";
 import { addClient } from "@/app/actions";
 import {
   enrichClients,
@@ -15,19 +15,14 @@ import { Mail, Phone, Users, Wallet, AlertCircle } from "lucide-react";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { ClientEditButton } from "@/components/records/ClientEditButton";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 45;
 
 export default async function ClientsPage() {
-  const [clientsRes, incomeRes, subsRes] = await Promise.all([
-    fetchClients(),
-    fetchIncome(),
-    fetchSubscriptions(),
-  ]);
-
-  const live = isAllLive([clientsRes.live, incomeRes.live, subsRes.live]);
-  const incomeEntries = withResolvedStatus(incomeRes.rows);
-  const clients = enrichClients(clientsRes.rows, incomeEntries);
-  const notifications = buildNotifications(incomeEntries, subsRes.rows);
+  const bundle = await getFinanceBundle();
+  const live = isAllLive([bundle.live.clients, bundle.live.income, bundle.live.subscriptions]);
+  const incomeEntries = withResolvedStatus(bundle.income);
+  const clients = enrichClients(bundle.clients, incomeEntries);
+  const notifications = buildNotifications(incomeEntries, bundle.subscriptions);
 
   const totalRevenue = clients.reduce((s, c) => s + c.revenue, 0);
   const totalOutstanding = clients.reduce((s, c) => s + c.outstanding, 0);

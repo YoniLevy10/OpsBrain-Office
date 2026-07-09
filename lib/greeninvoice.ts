@@ -1,9 +1,15 @@
-// Green Invoice (Morning) API client with pagination support.
+// Morning (חשבונית ירוקה) API client — OAuth 2.0 + pagination.
+// Docs: https://developers.morning.co/api
 
-const BASE_URL =
-  process.env.GREENINVOICE_SANDBOX === "true"
-    ? "https://sandbox.d.greeninvoice.co.il/api/v1"
-    : "https://api.greeninvoice.co.il/api/v1";
+const SANDBOX = process.env.GREENINVOICE_SANDBOX === "true";
+
+const API_BASE = SANDBOX
+  ? "https://sandbox.d.greeninvoice.co.il/api/v1"
+  : "https://api.greeninvoice.co.il/api/v1";
+
+const TOKEN_URL = SANDBOX
+  ? "https://api.sandbox.morning.dev/idp/v1/oauth/token"
+  : "https://api.morning.co/idp/v1/oauth/token";
 
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
@@ -11,30 +17,81 @@ export function isGreenInvoiceConfigured() {
   return Boolean(process.env.GREENINVOICE_API_ID && process.env.GREENINVOICE_API_SECRET);
 }
 
+function parseAuthError(status: number, body: string): string {
+  try {
+    const data = JSON.parse(body) as { error?: string; error_description?: string };
+    const code = data.error ?? "";
+    const desc = data.error_description ?? body;
+
+    if (code === "unauthorized_client") {
+      return "אין גישת API במנוי — נדרש מנוי Best ומעלה + מפתח API פעיל ב-Morning";
+    }
+    if (code === "invalid_client") {
+      return "מפתח API שגוי — בדוק GREENINVOICE_API_ID ו-GREENINVOICE_API_SECRET ב-Vercel";
+    }
+    if (code === "invalid_grant") {
+      return "מפתח API פג תוקף או בוטל — צור מפתח חדש ב-Morning → כלי מפתחים";
+    }
+    if (SANDBOX) {
+      return `שגיאת אימות (sandbox): ${desc}`;
+    }
+    return `שגיאת אימות Morning: ${desc}`;
+  } catch {
+    return `שגיאת אימות Morning (${status}): ${body.slice(0, 200)}`;
+  }
+}
+
 async function getToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
     return cachedToken.token;
   }
-  const res = await fetch(`${BASE_URL}/account/token`, {
+
+  const clientId = process.env.GREENINVOICE_API_ID;
+  const clientSecret = process.env.GREENINVOICE_API_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error("חשבונית ירוקה לא מחוברת — חסרים משתני סביבה");
+  }
+
+  const res = await fetch(TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      id: process.env.GREENINVOICE_API_ID,
-      secret: process.env.GREENINVOICE_API_SECRET,
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
     }),
     cache: "no-store",
   });
+
+  const body = await res.text();
   if (!res.ok) {
-    throw new Error(`Green Invoice auth failed: ${res.status} ${await res.text()}`);
+    throw new Error(parseAuthError(res.status, body));
   }
-  const data = await res.json();
-  cachedToken = { token: data.token, expiresAt: Date.now() + 25 * 60_000 };
-  return data.token;
+
+  const data = JSON.parse(body) as {
+    accessToken?: string;
+    token?: string;
+    expiresAt?: number;
+    expires?: number;
+  };
+
+  const token = data.accessToken ?? data.token;
+  if (!token) {
+    throw new Error("תגובת אימות לא תקינה מ-Morning — חסר accessToken");
+  }
+
+  const expiresAtSec = data.expiresAt ?? data.expires;
+  const expiresAtMs = expiresAtSec
+    ? expiresAtSec * (expiresAtSec > 1e12 ? 1 : 1000)
+    : Date.now() + 55 * 60_000;
+
+  cachedToken = { token, expiresAt: expiresAtMs };
+  return token;
 }
 
 export async function giFetch(path: string, init?: RequestInit): Promise<unknown> {
   const token = await getToken();
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -43,10 +100,42 @@ export async function giFetch(path: string, init?: RequestInit): Promise<unknown
     },
     cache: "no-store",
   });
+
+  if (res.status === 401) {
+    cachedToken = null;
+    const retryToken = await getToken();
+    const retry = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${retryToken}`,
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+    });
+    if (!retry.ok) {
+      throw new Error(`Morning ${path} failed: ${retry.status} ${await retry.text()}`);
+    }
+    return retry.json();
+  }
+
   if (!res.ok) {
-    throw new Error(`Green Invoice ${path} failed: ${res.status} ${await res.text()}`);
+    throw new Error(`Morning ${path} failed: ${res.status} ${await res.text()}`);
   }
   return res.json();
+}
+
+/** Quick connectivity check for settings / diagnostics */
+export async function testGreenInvoiceConnection(): Promise<{ ok: boolean; error?: string }> {
+  if (!isGreenInvoiceConfigured()) {
+    return { ok: false, error: "משתני סביבה חסרים" };
+  }
+  try {
+    await giFetch("/documents/types", { method: "GET" });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "שגיאת חיבור" };
+  }
 }
 
 export const INCOME_DOC_TYPES = [300, 305, 320, 400, 405];
@@ -89,4 +178,8 @@ export async function searchExpenses(fromDate?: string) {
   const body: Record<string, unknown> = {};
   if (fromDate) body.fromDate = fromDate;
   return searchPaginated("/expenses/search", body);
+}
+
+export function getGreenInvoiceEnvLabel(): string {
+  return SANDBOX ? "Sandbox (בדיקות)" : "Production (אמת)";
 }

@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Settings,
   FileSpreadsheet,
+  Landmark,
 } from "lucide-react";
 
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
+  { href: "/bank", label: "בנק", icon: Landmark },
   { href: "/reports", label: "דוחות", icon: FileSpreadsheet },
 ];
 
