@@ -3,6 +3,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { PWARegister } from "@/components/PWARegister";
+import { PullToRefresh } from "@/components/layout/PullToRefresh";
 
 export const metadata: Metadata = {
   title: "OpsBrain Finance",
@@ -40,7 +41,9 @@ export default function RootLayout({
         <PWARegister />
         <div className="flex min-h-screen">
           <Sidebar />
-          <main className="flex-1 min-w-0 pb-mobile-nav">{children}</main>
+          <main className="flex-1 min-w-0 pb-mobile-nav">
+            <PullToRefresh>{children}</PullToRefresh>
+          </main>
         </div>
         <MobileNav />
       </body>
