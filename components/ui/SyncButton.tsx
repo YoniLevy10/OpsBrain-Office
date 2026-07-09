@@ -48,7 +48,7 @@ export function SyncButton() {
         onClick={handleSync}
         disabled={state === "loading"}
         aria-label="סנכרון חשבונית ירוקה"
-        className="flex items-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50 shrink-0"
+        className="flex items-center justify-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] w-10 h-10 sm:w-auto sm:h-auto px-0 sm:px-4 py-0 sm:py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50 shrink-0"
       >
         {state === "loading" ? (
           <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex">
