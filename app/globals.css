@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700;800&family=Assistant:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg: #0A0C10;
+  --bg-elevated: #12151C;
+  --surface: #171B24;
+  --surface-hover: #1D222D;
+  --border: #262B37;
+  --border-soft: #1D212B;
+
+  --text-primary: #F0F2F6;
+  --text-secondary: #9BA3B4;
+  --text-tertiary: #626B7D;
+
+  --accent-emerald: #35C79A;
+  --accent-emerald-soft: rgba(53, 199, 154, 0.14);
+  --accent-brass: #D4A857;
+  --accent-brass-soft: rgba(212, 168, 87, 0.14);
+  --accent-rose: #E5677A;
+  --accent-rose-soft: rgba(229, 103, 122, 0.14);
+  --accent-blue: #6C93E8;
+  --accent-blue-soft: rgba(108, 147, 232, 0.14);
+
+  --font-display: "Rubik", system-ui, sans-serif;
+  --font-body: "Assistant", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-emerald: var(--accent-emerald);
+  --color-brass: var(--accent-brass);
+  --color-rose: var(--accent-rose);
+  --color-blue: var(--accent-blue);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(53, 199, 154, 0.06), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(212, 168, 87, 0.05), transparent);
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), sans-serif;
+}
+
+.font-nums {
+  font-family: var(--font-mono), monospace;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-emerald);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
