@@ -3,7 +3,7 @@ import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { isGreenInvoiceConfigured } from "@/lib/greeninvoice";
 import { getSupabase } from "@/lib/supabase";
-import { getLastSyncTime } from "@/lib/meta";
+import { getLastSyncTime, getUsdRate } from "@/lib/meta";
 import {
   CheckCircle2,
   XCircle,
@@ -11,8 +11,10 @@ import {
   Link2,
   RefreshCw,
   Clock,
+  DollarSign,
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
+import { UsdRateForm } from "@/components/settings/UsdRateForm";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,7 @@ export default async function SettingsPage() {
   const sb = getSupabase();
   const sbConnected = Boolean(sb);
   const lastSync = await getLastSyncTime();
+  const usdRate = await getUsdRate();
 
   return (
     <div>
@@ -96,6 +99,18 @@ export default async function SettingsPage() {
               </div>
             </div>
           )}
+        </Card>
+
+        <Card className="p-5">
+          <SectionHeading title="שער דולר" subtitle="משמש להמרת מחירים ב-USD בטפסים ובסנכרון" />
+          <div className="flex items-start gap-4 mt-2">
+            <div className="w-10 h-10 rounded-xl bg-brass/10 flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-brass" />
+            </div>
+            <div className="flex-1">
+              <UsdRateForm currentRate={usdRate} />
+            </div>
+          </div>
         </Card>
 
         <Card className="p-5">

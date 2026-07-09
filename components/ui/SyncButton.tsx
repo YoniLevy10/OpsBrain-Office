@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FolderSync, Loader2 } from "lucide-react";
+import { FolderSync } from "lucide-react";
+import { BrainMark } from "@/components/brand/BrainMark";
 
 export function SyncButton() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -32,11 +33,11 @@ export function SyncButton() {
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
       {message && (
         <span
-          className={`hidden sm:inline text-[12px] max-w-48 lg:max-w-72 truncate ${
-            state === "error" ? "text-rose" : "text-emerald"
+          className={`text-[11.5px] sm:text-[12px] max-w-full sm:max-w-48 lg:max-w-72 truncate px-2 py-1 rounded-lg ${
+            state === "error" ? "text-rose bg-rose/10" : "text-emerald bg-emerald/10"
           }`}
           title={message}
         >
@@ -50,7 +51,9 @@ export function SyncButton() {
         className="flex items-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50 shrink-0"
       >
         {state === "loading" ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex">
+            <BrainMark className="w-full h-full" variant="on-dark" />
+          </span>
         ) : (
           <FolderSync className="w-4 h-4" strokeWidth={2} />
         )}

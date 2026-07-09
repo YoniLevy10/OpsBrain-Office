@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Bell, AlertCircle, Calendar, X } from "lucide-react";
 import { formatCurrency } from "@/lib/data";
 import type { Notification } from "@/lib/analytics";
@@ -46,22 +47,38 @@ export function NotificationsButton({ notifications }: { notifications: Notifica
             {notifications.length === 0 ? (
               <p className="text-[13px] text-text-tertiary px-4 py-8 text-center">אין התראות חדשות</p>
             ) : (
-              notifications.map((n) => (
-                <div key={n.id} className="flex items-start gap-3 px-4 py-3 border-b border-border-soft last:border-0 hover:bg-surface-hover/50">
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${n.type === "overdue" ? "bg-rose/10 text-rose" : "bg-blue/10 text-blue"}`}>
-                    {n.type === "overdue" ? <AlertCircle className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
+              notifications.map((n) => {
+                const inner = (
+                  <>
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${n.type === "overdue" ? "bg-rose/10 text-rose" : "bg-blue/10 text-blue"}`}>
+                      {n.type === "overdue" ? <AlertCircle className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12.5px] font-medium">{n.title}</div>
+                      <div className="text-[11.5px] text-text-tertiary mt-0.5">{n.body}</div>
+                    </div>
+                    {n.amount !== undefined && (
+                      <span className="font-nums text-[12px] font-semibold text-rose shrink-0">
+                        {formatCurrency(n.amount)}
+                      </span>
+                    )}
+                  </>
+                );
+                return n.href ? (
+                  <Link
+                    key={n.id}
+                    href={n.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-start gap-3 px-4 py-3 border-b border-border-soft last:border-0 hover:bg-surface-hover/50 transition-colors"
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={n.id} className="flex items-start gap-3 px-4 py-3 border-b border-border-soft last:border-0">
+                    {inner}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[12.5px] font-medium">{n.title}</div>
-                    <div className="text-[11.5px] text-text-tertiary mt-0.5">{n.body}</div>
-                  </div>
-                  {n.amount !== undefined && (
-                    <span className="font-nums text-[12px] font-semibold text-rose shrink-0">
-                      {formatCurrency(n.amount)}
-                    </span>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

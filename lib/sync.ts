@@ -6,12 +6,11 @@ import {
   searchExpenses,
   PAID_DOC_TYPES,
 } from "./greeninvoice";
-import { setLastSyncTime } from "./meta";
+import { setLastSyncTime, getUsdRate } from "./meta";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const OVERDUE_DAYS = 30;
-const USD_RATE = 3.7;
 
 export type SyncResult = {
   ok: boolean;
@@ -81,39 +80,40 @@ async function syncSubscriptionsFromExpenses(sb: NonNullable<ReturnType<typeof g
 
   if (!expenses || expenses.length === 0) return 0;
 
+  let count = 0;
   const byVendor = new Map<string, any>();
   for (const e of expenses) {
     if (!byVendor.has(e.vendor)) byVendor.set(e.vendor, e);
   }
 
-  let count = 0;
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  const nextCharge = nextMonth.toISOString().slice(0, 10);
-
   for (const [vendor, e] of byVendor) {
-    const row = {
-      vendor,
-      category: e.category ?? "אחר",
-      price: Number(e.amount),
-      currency: e.currency ?? "ILS",
-      price_ils: Number(e.amount_ils ?? e.amount),
-      billing_cycle: "חודשי",
-      next_charge: nextCharge,
-      status: "פעיל",
-    };
-
     const { data: existing } = await sb
       .from("ob_subscriptions")
-      .select("id")
+      .select("id, next_charge, status")
       .eq("vendor", vendor)
       .maybeSingle();
 
     if (existing) {
-      const { error } = await sb.from("ob_subscriptions").update(row).eq("id", existing.id);
+      const { error } = await sb.from("ob_subscriptions").update({
+        category: e.category ?? "אחר",
+        price: Number(e.amount),
+        currency: e.currency ?? "ILS",
+        price_ils: Number(e.amount_ils ?? e.amount),
+      }).eq("id", existing.id);
       if (!error) count++;
     } else {
-      const { error } = await sb.from("ob_subscriptions").insert(row);
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      const { error } = await sb.from("ob_subscriptions").insert({
+        vendor,
+        category: e.category ?? "אחר",
+        price: Number(e.amount),
+        currency: e.currency ?? "ILS",
+        price_ils: Number(e.amount_ils ?? e.amount),
+        billing_cycle: "חודשי",
+        next_charge: nextMonth.toISOString().slice(0, 10),
+        status: "פעיל",
+      });
       if (!error) count++;
     }
   }
@@ -138,6 +138,8 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
     const fromDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
+
+    const usdRate = await getUsdRate();
 
     const [documents, clients, expenses] = await Promise.all([
       searchDocuments(fromDate),
@@ -194,7 +196,7 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
         category: mapExpenseCategory(e),
         amount,
         currency,
-        amount_ils: currency === "USD" ? Math.round(amount * USD_RATE) : amount,
+        amount_ils: currency === "USD" ? Math.round(amount * usdRate) : amount,
         date: e.date ?? e.documentDate ?? new Date().toISOString().slice(0, 10),
         recurring: Boolean(e.recurring ?? e.isRecurring),
       };

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   LayoutDashboard,
   Users,
@@ -9,7 +10,6 @@ import {
   TrendingDown,
   RefreshCw,
   Settings,
-  Activity,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -27,16 +27,10 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-l border-border bg-bg-elevated h-screen sticky top-0 card-shadow">
-      <div className="px-6 pt-7 pb-6 flex items-center gap-2.5">
-        <div className="relative w-8 h-8 rounded-lg bg-emerald/10 flex items-center justify-center">
-          <Activity className="w-4.5 h-4.5 text-emerald" strokeWidth={2.25} />
-        </div>
-        <div>
-          <div className="font-display font-bold text-[15px] tracking-tight leading-none">
-            OpsBrain
-          </div>
-          <div className="text-[11px] text-text-tertiary mt-1 leading-none">Finance</div>
-        </div>
+      <div className="px-6 pt-7 pb-6">
+        <Link href="/" className="block hover:opacity-90 transition-opacity">
+          <BrandLogo size={32} />
+        </Link>
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">
@@ -71,10 +65,20 @@ export function Sidebar() {
       <div className="px-3 pb-4">
         <Link
           href="/settings"
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] text-text-secondary hover:bg-surface/60 hover:text-text-primary transition-colors"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-colors ${
+            pathname === "/settings"
+              ? "bg-surface text-text-primary font-semibold"
+              : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"
+          }`}
         >
-          <Settings className="w-[17px] h-[17px] text-text-tertiary" strokeWidth={2} />
+          <Settings
+            className={`w-[17px] h-[17px] ${pathname === "/settings" ? "text-emerald" : "text-text-tertiary"}`}
+            strokeWidth={2}
+          />
           הגדרות
+          {pathname === "/settings" && (
+            <span className="mr-auto w-1 h-1 rounded-full bg-emerald" />
+          )}
         </Link>
         <div className="mt-3 mx-1 px-3 py-3 rounded-xl bg-bg border border-border-soft">
           <div className="text-[11px] text-text-tertiary mb-1">מחובר כ־</div>

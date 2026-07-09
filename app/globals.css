@@ -89,6 +89,21 @@ h1, h2, h3, h4, h5, h6 {
   padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom));
 }
 
+@keyframes brain-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(0.94);
+  }
+}
+
+.brain-loader {
+  animation: brain-pulse 1.35s ease-in-out infinite;
+}
+
 @media (min-width: 768px) {
   .pb-mobile-nav {
     padding-bottom: 0;

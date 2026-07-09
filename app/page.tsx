@@ -1,6 +1,7 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { SyncButton } from "@/components/ui/SyncButton";
+import { MonthPicker } from "@/components/ui/MonthPicker";
 import { formatCurrency } from "@/lib/data";
 import {
   fetchClients,
@@ -24,13 +25,19 @@ import {
   getCurrentMonthKey,
   getPreviousMonthKey,
   buildNotifications,
+  formatMonthLabel,
 } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
 const donutPalette = ["#2F6FED", "#0D9B73", "#C98A1A", "#DC4A62", "#8B95A8", "#7C5FD4", "#1A9FB0"];
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const params = await searchParams;
   const [clientsRes, incomeRes, expensesRes, subsRes] = await Promise.all([
     fetchClients(),
     fetchIncome(),
@@ -44,7 +51,10 @@ export default async function DashboardPage() {
   const subscriptions = subsRes.rows;
   const clients = enrichClients(clientsRes.rows, incomeEntries);
 
-  const currentMonth = getCurrentMonthKey();
+  const currentMonth =
+    params.month && /^\d{4}-\d{2}$/.test(params.month)
+      ? params.month
+      : getCurrentMonthKey();
   const prevMonth = getPreviousMonthKey(currentMonth);
 
   const monthIncome = filterIncomeByMonth(incomeEntries, currentMonth);
@@ -83,14 +93,18 @@ export default async function DashboardPage() {
     <div>
       <TopBar
         title="לוח בקרה"
-        subtitle="סקירה כללית של מצב העסק"
+        subtitle={`סקירה כללית — ${formatMonthLabel(currentMonth)}`}
         live={live}
         notifications={notifications}
         action={<SyncButton />}
       />
 
       <div className="px-4 sm:px-6 md:px-9">
+        <div className="mb-4 flex justify-end">
+          <MonthPicker month={currentMonth} />
+        </div>
         <DashboardContent
+          monthLabel={formatMonthLabel(currentMonth)}
           incomeEntries={incomeEntries}
           expenseEntries={expenseEntries}
           subscriptions={subscriptions}
@@ -103,7 +117,7 @@ export default async function DashboardPage() {
             incomeDeltaDir: deltaDirection(income, prevIncomeSum),
             expenses,
             expensesDelta: percentDelta(expenses, prevExpensesSum),
-            expensesDeltaDir: deltaDirection(prevExpensesSum, expenses),
+            expensesDeltaDir: deltaDirection(expenses, prevExpensesSum),
             profit,
             activeClients,
             outstanding,

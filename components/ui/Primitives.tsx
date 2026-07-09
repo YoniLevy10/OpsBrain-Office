@@ -43,6 +43,7 @@ export function KpiCard({
   value,
   delta,
   deltaDirection = "up",
+  deltaInvert = false,
   icon: Icon,
   accent = "emerald",
 }: {
@@ -50,6 +51,7 @@ export function KpiCard({
   value: string;
   delta?: string;
   deltaDirection?: "up" | "down";
+  deltaInvert?: boolean;
   icon: LucideIcon;
   accent?: "emerald" | "brass" | "rose" | "blue";
 }) {
@@ -74,10 +76,12 @@ export function KpiCard({
         <span className="font-nums text-[22px] sm:text-[26px] font-semibold tracking-tight">
           {value}
         </span>
-        {delta && (
+        {delta && (() => {
+          const isGood = deltaInvert ? deltaDirection === "down" : deltaDirection === "up";
+          return (
           <span
             className={`flex items-center gap-0.5 text-[12.5px] font-semibold ${
-              deltaDirection === "up" ? "text-emerald" : "text-rose"
+              isGood ? "text-emerald" : "text-rose"
             }`}
           >
             {deltaDirection === "up" ? (
@@ -87,7 +91,8 @@ export function KpiCard({
             )}
             {delta}
           </span>
-        )}
+          );
+        })()}
       </div>
     </Card>
   );
