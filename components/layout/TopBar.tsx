@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Bell, Search } from "lucide-react";
+import { Bell } from "lucide-react";
 
 export function TopBar({
   title,
@@ -13,13 +13,13 @@ export function TopBar({
   live?: boolean;
 }) {
   return (
-    <header className="flex items-center justify-between gap-4 px-6 md:px-9 pt-8 pb-6">
-      <div>
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-[22px] font-bold tracking-tight">{title}</h1>
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-4 sm:px-6 md:px-9 pt-6 sm:pt-8 pb-4 sm:pb-6">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-[20px] sm:text-[22px] font-bold tracking-tight">{title}</h1>
           {live !== undefined && (
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold shrink-0 ${
                 live ? "bg-emerald/10 text-emerald" : "bg-brass/10 text-brass"
               }`}
             >
@@ -29,18 +29,11 @@ export function TopBar({
           )}
         </div>
         {subtitle && (
-          <p className="text-[13.5px] text-text-secondary mt-1">{subtitle}</p>
+          <p className="text-[13px] sm:text-[13.5px] text-text-secondary mt-1 truncate">{subtitle}</p>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center gap-2 bg-surface border border-border-soft rounded-lg px-3 py-2 w-64">
-          <Search className="w-4 h-4 text-text-tertiary" />
-          <input
-            placeholder="חיפוש..."
-            className="bg-transparent text-[13px] outline-none w-full placeholder:text-text-tertiary"
-          />
-        </div>
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <button
           aria-label="התראות"
           className="w-9 h-9 rounded-lg bg-surface border border-border-soft flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"

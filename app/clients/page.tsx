@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, Badge } from "@/components/ui/Primitives";
+import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
 import { fetchClients } from "@/lib/queries";
@@ -12,7 +13,7 @@ export default async function ClientsPage() {
   const { rows: clients, live } = await fetchClients();
 
   return (
-    <div className="pb-16">
+    <div>
       <TopBar
         title="לקוחות"
         subtitle={`${clients.length} לקוחות · ${clients.filter((c) => c.status === "פעיל").length} פעילים`}
@@ -37,8 +38,56 @@ export default async function ClientsPage() {
         }
       />
 
-      <div className="px-6 md:px-9">
-        <Card className="overflow-hidden">
+      <div className="px-4 sm:px-6 md:px-9">
+        <MobileCardList
+          isEmpty={clients.length === 0}
+          emptyMessage="אין עדיין לקוחות — הוסף את הראשון עם הכפתור למעלה"
+        >
+          {clients.map((c) => (
+            <MobileCard key={c.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[14px]">{c.company}</div>
+                  {c.contact && (
+                    <div className="text-[12px] text-text-secondary mt-0.5">{c.contact}</div>
+                  )}
+                </div>
+                <Badge label={c.status} />
+              </div>
+              <MobileCardRow
+                label="הכנסה מצטברת"
+                value={<span className="font-nums font-semibold">{formatCurrency(c.revenue)}</span>}
+              />
+              <MobileCardRow
+                label="יתרה פתוחה"
+                value={
+                  c.outstanding > 0 ? (
+                    <span className="font-nums font-semibold text-rose">{formatCurrency(c.outstanding)}</span>
+                  ) : (
+                    <span className="text-text-tertiary">—</span>
+                  )
+                }
+              />
+              <MobileCardRow label="לקוח מאז" value={c.activeSince} />
+              {(c.email || c.phone) && (
+                <div className="flex flex-wrap gap-3 text-[12px] text-text-tertiary pt-1">
+                  {c.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="w-3 h-3" /> {c.email}
+                    </span>
+                  )}
+                  {c.phone && (
+                    <span className="flex items-center gap-1">
+                      <Phone className="w-3 h-3" /> {c.phone}
+                    </span>
+                  )}
+                </div>
+              )}
+            </MobileCard>
+          ))}
+        </MobileCardList>
+
+        <Card className="overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13.5px]">
               <thead>

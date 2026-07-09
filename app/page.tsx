@@ -22,7 +22,7 @@ import { CategoryDonut } from "@/components/charts/CategoryDonut";
 
 export const dynamic = "force-dynamic";
 
-const donutPalette = ["#6C93E8", "#35C79A", "#D4A857", "#E5677A", "#8B93A6", "#7A6CE8", "#4FB8C7"];
+const donutPalette = ["#7BA4F0", "#4AD4A8", "#E0B86A", "#F07B8E", "#9BA3B4", "#9B8AE8", "#5EC8D6"];
 
 export default function DashboardPageWrapper() {
   return <DashboardPage />;
@@ -84,7 +84,7 @@ async function DashboardPage() {
   const recentIncome = incomeEntries.slice(0, 4);
 
   return (
-    <div className="pb-16">
+    <div>
       <TopBar
         title="לוח בקרה"
         subtitle="סקירה כללית של מצב העסק"
@@ -92,8 +92,8 @@ async function DashboardPage() {
         action={<SyncButton />}
       />
 
-      <div className="px-6 md:px-9 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KpiCard label="הכנסה חודשית (שולם)" value={formatCurrency(income)} icon={TrendingUp} accent="emerald" />
           <KpiCard label="הוצאה חודשית" value={formatCurrency(expenses)} icon={TrendingDown} accent="rose" />
           <KpiCard label="רווח נקי" value={formatCurrency(profit)} icon={Wallet} accent="brass" />

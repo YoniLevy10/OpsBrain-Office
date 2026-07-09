@@ -94,7 +94,7 @@ export function AddRecordPanel({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 bg-emerald text-bg font-semibold text-[13px] px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+        className="flex items-center gap-1.5 bg-emerald text-bg font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity shrink-0"
       >
         <Plus className="w-4 h-4" strokeWidth={2.5} />
         {buttonLabel}

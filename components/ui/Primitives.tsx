@@ -71,7 +71,7 @@ export function KpiCard({
         </div>
       </div>
       <div className="flex items-end justify-between">
-        <span className="font-nums text-[26px] font-semibold tracking-tight">
+        <span className="font-nums text-[22px] sm:text-[26px] font-semibold tracking-tight">
           {value}
         </span>
         {delta && (

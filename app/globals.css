@@ -2,29 +2,32 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0A0C10;
-  --bg-elevated: #12151C;
-  --surface: #171B24;
-  --surface-hover: #1D222D;
-  --border: #262B37;
-  --border-soft: #1D212B;
+  --bg: #0F1117;
+  --bg-elevated: #161922;
+  --surface: #1C1F2A;
+  --surface-hover: #232734;
+  --border: #2D3344;
+  --border-soft: #252A38;
 
-  --text-primary: #F0F2F6;
-  --text-secondary: #9BA3B4;
-  --text-tertiary: #626B7D;
+  --text-primary: #E8EAF0;
+  --text-secondary: #A8B0C0;
+  --text-tertiary: #6E778A;
 
-  --accent-emerald: #35C79A;
-  --accent-emerald-soft: rgba(53, 199, 154, 0.14);
-  --accent-brass: #D4A857;
-  --accent-brass-soft: rgba(212, 168, 87, 0.14);
-  --accent-rose: #E5677A;
-  --accent-rose-soft: rgba(229, 103, 122, 0.14);
-  --accent-blue: #6C93E8;
-  --accent-blue-soft: rgba(108, 147, 232, 0.14);
+  --accent-emerald: #4AD4A8;
+  --accent-emerald-soft: rgba(74, 212, 168, 0.12);
+  --accent-brass: #E0B86A;
+  --accent-brass-soft: rgba(224, 184, 106, 0.12);
+  --accent-rose: #F07B8E;
+  --accent-rose-soft: rgba(240, 123, 142, 0.12);
+  --accent-blue: #7BA4F0;
+  --accent-blue-soft: rgba(123, 164, 240, 0.12);
 
   --font-display: "Rubik", system-ui, sans-serif;
   --font-body: "Assistant", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-nav-height: 4.5rem;
 }
 
 @theme inline {
@@ -59,9 +62,10 @@ body {
   color: var(--text-primary);
   font-family: var(--font-body), system-ui, sans-serif;
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(53, 199, 154, 0.06), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(212, 168, 87, 0.05), transparent);
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74, 212, 168, 0.05), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(224, 184, 106, 0.04), transparent);
   background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -71,6 +75,16 @@ h1, h2, h3, h4, h5, h6 {
 .font-nums {
   font-family: var(--font-mono), monospace;
   font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.pb-mobile-nav {
+  padding-bottom: calc(var(--mobile-nav-height) + var(--safe-area-bottom));
+}
+
+@media (min-width: 768px) {
+  .pb-mobile-nav {
+    padding-bottom: 0;
+  }
 }
 
 ::-webkit-scrollbar {

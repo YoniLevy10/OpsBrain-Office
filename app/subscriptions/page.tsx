@@ -20,7 +20,7 @@ export default async function SubscriptionsPage() {
   const activeCount = subscriptions.filter((s) => s.status === "פעיל").length;
 
   return (
-    <div className="pb-16">
+    <div>
       <TopBar
         title="מנויים"
         subtitle="כל הכלים והתשתיות שאתה משלם עליהם"
@@ -42,8 +42,8 @@ export default async function SubscriptionsPage() {
         }
       />
 
-      <div className="px-6 md:px-9 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <KpiCard label="עלות חודשית כוללת" value={formatCurrency(monthlyTotal)} icon={RefreshCw} accent="blue" />
           <KpiCard label="תחזית שנתית" value={formatCurrency(annualProjection)} icon={Calendar} accent="brass" />
           <KpiCard label="מנויים פעילים" value={String(activeCount)} icon={Layers} accent="emerald" />
