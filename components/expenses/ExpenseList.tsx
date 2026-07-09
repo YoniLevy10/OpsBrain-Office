@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatCurrency } from "@/lib/data";
 import type { ExpenseEntry } from "@/lib/data";
@@ -64,9 +65,12 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
                   {e.category}
                 </span>
               </div>
-              <div className="text-end shrink-0">
-                <div className="font-nums font-semibold text-[14px]">{formatCurrency(e.amountILS)}</div>
-                {e.currency === "USD" && <div className="text-[11px] text-text-tertiary font-nums">${e.amount.toLocaleString()}</div>}
+              <div className="flex items-start gap-1 shrink-0">
+                <div className="text-end">
+                  <div className="font-nums font-semibold text-[14px]">{formatCurrency(e.amountILS)}</div>
+                  {e.currency === "USD" && <div className="text-[11px] text-text-tertiary font-nums">${e.amount.toLocaleString()}</div>}
+                </div>
+                <DeleteButton table="expenses" id={e.id} />
               </div>
             </div>
             <MobileCardRow label="תאריך" value={e.date} />
@@ -86,6 +90,7 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
                 <th className="text-start font-medium px-5 py-3.5">סכום ב-₪</th>
                 <th className="text-start font-medium px-5 py-3.5">תאריך</th>
                 <th className="text-start font-medium px-5 py-3.5">חוזר</th>
+                <th className="w-10" />
               </tr>
             </thead>
             <tbody>
@@ -103,11 +108,14 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
                   <td className="px-5 py-4 font-nums font-semibold">{formatCurrency(e.amountILS)}</td>
                   <td className="px-5 py-4 text-text-secondary">{e.date}</td>
                   <td className="px-5 py-4 text-text-tertiary">{e.recurring ? "כן" : "לא"}</td>
+                  <td className="px-3 py-4">
+                    <DeleteButton table="expenses" id={e.id} />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
+                  <td colSpan={7} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
                 </tr>
               )}
             </tbody>

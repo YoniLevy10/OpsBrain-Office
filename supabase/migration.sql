@@ -77,3 +77,12 @@ alter table public.ob_expenses add column if not exists gi_id text;
 create unique index if not exists ob_clients_gi_id_key on public.ob_clients(gi_id) where gi_id is not null;
 create unique index if not exists ob_income_gi_id_key on public.ob_income(gi_id) where gi_id is not null;
 create unique index if not exists ob_expenses_gi_id_key on public.ob_expenses(gi_id) where gi_id is not null;
+
+-- App metadata (last sync time, etc.)
+create table if not exists public.ob_meta (
+  key text primary key,
+  value text,
+  updated_at timestamptz default now()
+);
+alter table public.ob_meta enable row level security;
+create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);

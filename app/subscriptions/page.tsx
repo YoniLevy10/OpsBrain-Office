@@ -6,6 +6,7 @@ import { fetchSubscriptions, fetchIncome } from "@/lib/queries";
 import { addSubscription } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export default async function SubscriptionsPage() {
                   {s.vendor.slice(0, 2)}
                 </div>
                 <Badge label={s.status} />
+                <DeleteButton table="subscriptions" id={s.id} />
               </div>
               <div className="font-semibold text-[14.5px]">{s.vendor}</div>
               <div className="text-[12px] text-text-tertiary mt-0.5">{s.category}</div>

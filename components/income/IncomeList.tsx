@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Card, Badge, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { Tabs } from "@/components/ui/Tabs";
+import { DeleteButton } from "@/components/ui/DeleteButton";
+import { IncomeStatusSelect } from "@/components/income/IncomeStatusSelect";
 import { formatCurrency } from "@/lib/data";
 import type { IncomeEntry } from "@/lib/data";
 import { resolveIncomeStatus } from "@/lib/analytics";
@@ -54,7 +56,10 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                 <div className="font-semibold text-[14px]">{i.clientName}</div>
                 {i.project && <div className="text-[12px] text-text-secondary mt-0.5 truncate">{i.project}</div>}
               </div>
-              <Badge label={i.status} />
+              <div className="flex items-center gap-1 shrink-0">
+                <IncomeStatusSelect id={i.id} status={i.status} />
+                <DeleteButton table="income" id={i.id} />
+              </div>
             </div>
             <MobileCardRow label="סכום" value={<span className="font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</span>} />
             <MobileCardRow label="תאריך" value={i.date} />
@@ -74,6 +79,7 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                 <th className="text-start font-medium px-5 py-3.5">סכום</th>
                 <th className="text-start font-medium px-5 py-3.5">תאריך</th>
                 <th className="text-start font-medium px-5 py-3.5">סטטוס</th>
+                <th className="w-10" />
               </tr>
             </thead>
             <tbody>
@@ -84,12 +90,17 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                   <td className="px-5 py-4 text-text-tertiary font-nums">{i.invoiceNumber}</td>
                   <td className="px-5 py-4 font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</td>
                   <td className="px-5 py-4 text-text-secondary">{i.date}</td>
-                  <td className="px-5 py-4"><Badge label={i.status} /></td>
+                  <td className="px-5 py-4">
+                    <IncomeStatusSelect id={i.id} status={i.status} />
+                  </td>
+                  <td className="px-3 py-4">
+                    <DeleteButton table="income" id={i.id} />
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
+                  <td colSpan={7} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
                 </tr>
               )}
             </tbody>

@@ -87,6 +87,16 @@ export async function addSubscription(formData: FormData): Promise<ActionResult>
   return { ok: true };
 }
 
+export async function updateIncomeStatus(id: string, status: string): Promise<ActionResult> {
+  const sb = getSupabase();
+  if (!sb) return { ok: false, error: NOT_CONFIGURED };
+  const { error } = await sb.from("ob_income").update({ status }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/income");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function deleteRecord(table: string, id: string): Promise<ActionResult> {
   const tableMap: Record<string, string> = {
     clients: "ob_clients",

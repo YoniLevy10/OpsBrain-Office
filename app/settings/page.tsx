@@ -3,12 +3,14 @@ import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { isGreenInvoiceConfigured } from "@/lib/greeninvoice";
 import { getSupabase } from "@/lib/supabase";
+import { getLastSyncTime } from "@/lib/meta";
 import {
   CheckCircle2,
   XCircle,
   Database,
   Link2,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +42,25 @@ function StatusRow({
   );
 }
 
+function formatSyncTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("he-IL", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export default async function SettingsPage() {
   const giConnected = isGreenInvoiceConfigured();
   const sb = getSupabase();
   const sbConnected = Boolean(sb);
+  const lastSync = await getLastSyncTime();
 
   return (
     <div>
@@ -65,6 +82,17 @@ export default async function SettingsPage() {
             connected={sbConnected}
             detail={sbConnected ? "מסד נתונים פעיל — טבלאות ob_*" : "Supabase לא מוגדר"}
           />
+          {lastSync && (
+            <div className="flex items-center gap-3 py-3 border-b border-border-soft last:border-0">
+              <div className="w-8 h-8 rounded-lg bg-blue/10 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-blue" />
+              </div>
+              <div>
+                <div className="text-[13.5px] font-medium">סנכרון אחרון</div>
+                <div className="text-[12px] text-text-tertiary">{formatSyncTime(lastSync)}</div>
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card className="p-5">
@@ -76,7 +104,10 @@ export default async function SettingsPage() {
             <div className="flex-1">
               <p className="text-[13.5px] text-text-secondary leading-relaxed">
                 הסנכרון מושך את 12 החודשים האחרונים: חשבוניות, לקוחות והוצאות.
-                הנתונים נשמרים ב-Supabase ומתעדכנים בכל ה-KPI בלוח הבקרה.
+                מנויים חוזרים נוצרים אוטומטית מהוצאות חוזרות. סנכרון אוטומטי יומי ב-05:00 UTC.
+              </p>
+              <p className="text-[12px] text-text-tertiary mt-2">
+                להפעלת סנכרון אוטומטי: הוסף <code className="bg-bg px-1.5 py-0.5 rounded text-[11px]">CRON_SECRET</code> ב-Vercel והרץ את migration.sql (טבלת ob_meta).
               </p>
               <div className="mt-4">
                 <SyncButton />
@@ -90,7 +121,7 @@ export default async function SettingsPage() {
           <div className="space-y-3 mt-2">
             <div className="flex items-center gap-3 text-[13px] text-text-secondary">
               <Database className="w-4 h-4 text-text-tertiary" />
-              <span>OpsBrain Finance v0.1 — Phase 1 MVP</span>
+              <span>OpsBrain Finance v0.2 — Phase 1 MVP</span>
             </div>
             <div className="flex items-center gap-3 text-[13px] text-text-secondary">
               <Link2 className="w-4 h-4 text-text-tertiary" />

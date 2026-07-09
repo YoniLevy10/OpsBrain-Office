@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { NotificationsButton } from "@/components/layout/NotificationsButton";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import type { Notification } from "@/lib/analytics";
 
 export function TopBar({
@@ -37,6 +38,7 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <GlobalSearch />
         <NotificationsButton notifications={notifications} />
         {action}
       </div>
