@@ -7,6 +7,7 @@ import { addSubscription } from "@/app/actions";
 import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
 import { DeleteButton } from "@/components/ui/DeleteButton";
+import { SubscriptionEditButton } from "@/components/records/SubscriptionEditButton";
 
 export const dynamic = "force-dynamic";
 
@@ -62,8 +63,11 @@ export default async function SubscriptionsPage() {
                 <div className="w-10 h-10 rounded-xl bg-blue/10 flex items-center justify-center text-[13px] font-bold text-blue">
                   {s.vendor.slice(0, 2)}
                 </div>
-                <Badge label={s.status} />
-                <DeleteButton table="subscriptions" id={s.id} />
+                <div className="flex items-center gap-1 shrink-0">
+                  <SubscriptionEditButton sub={s} />
+                  <Badge label={s.status} />
+                  <DeleteButton table="subscriptions" id={s.id} />
+                </div>
               </div>
               <div className="font-semibold text-[14.5px]">{s.vendor}</div>
               <div className="text-[12px] text-text-tertiary mt-0.5">{s.category}</div>

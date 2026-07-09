@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Settings,
   Activity,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
+  { href: "/reports", label: "דוחות", icon: FileSpreadsheet },
 ];
 
 export function Sidebar() {

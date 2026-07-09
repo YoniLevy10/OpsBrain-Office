@@ -13,6 +13,7 @@ import {
 } from "@/lib/analytics";
 import { Mail, Phone, Users, Wallet, AlertCircle } from "lucide-react";
 import { DeleteButton } from "@/components/ui/DeleteButton";
+import { ClientEditButton } from "@/components/records/ClientEditButton";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,8 @@ export default async function ClientsPage() {
                   <div className="font-semibold text-[14px]">{c.company}</div>
                   {c.contact && <div className="text-[12px] text-text-secondary mt-0.5">{c.contact}</div>}
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <ClientEditButton client={c} />
                   <Badge label={c.status} />
                   <DeleteButton table="clients" id={c.id} />
                 </div>
@@ -140,7 +142,10 @@ export default async function ClientsPage() {
                     <td className="px-5 py-4 text-text-secondary">{c.activeSince || "—"}</td>
                     <td className="px-5 py-4"><Badge label={c.status} /></td>
                     <td className="px-3 py-4">
-                      <DeleteButton table="clients" id={c.id} />
+                      <div className="flex items-center gap-0.5">
+                        <ClientEditButton client={c} />
+                        <DeleteButton table="clients" id={c.id} />
+                      </div>
                     </td>
                   </tr>
                 ))}

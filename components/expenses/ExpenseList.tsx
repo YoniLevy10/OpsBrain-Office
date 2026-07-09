@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { DeleteButton } from "@/components/ui/DeleteButton";
+import { ExpenseEditButton } from "@/components/records/ExpenseEditButton";
 import { Tabs } from "@/components/ui/Tabs";
 import { formatCurrency } from "@/lib/data";
 import type { ExpenseEntry } from "@/lib/data";
@@ -70,6 +71,7 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
                   <div className="font-nums font-semibold text-[14px]">{formatCurrency(e.amountILS)}</div>
                   {e.currency === "USD" && <div className="text-[11px] text-text-tertiary font-nums">${e.amount.toLocaleString()}</div>}
                 </div>
+                <ExpenseEditButton entry={e} />
                 <DeleteButton table="expenses" id={e.id} />
               </div>
             </div>
@@ -109,7 +111,10 @@ export function ExpenseList({ entries }: { entries: ExpenseEntry[] }) {
                   <td className="px-5 py-4 text-text-secondary">{e.date}</td>
                   <td className="px-5 py-4 text-text-tertiary">{e.recurring ? "כן" : "לא"}</td>
                   <td className="px-3 py-4">
-                    <DeleteButton table="expenses" id={e.id} />
+                    <div className="flex items-center gap-0.5">
+                      <ExpenseEditButton entry={e} />
+                      <DeleteButton table="expenses" id={e.id} />
+                    </div>
                   </td>
                 </tr>
               ))}

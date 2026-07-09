@@ -12,6 +12,7 @@ import {
   RefreshCw,
   Clock,
 } from "lucide-react";
+import { EnvChecklist } from "@/components/settings/EnvChecklist";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,8 @@ export default async function SettingsPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <EnvChecklist />
+
         <Card className="p-5">
           <SectionHeading title="סטטוס חיבורים" subtitle="מצב האינטגרציות הפעילות" />
           <StatusRow

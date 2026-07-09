@@ -5,6 +5,7 @@ import { Card, Badge, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { Tabs } from "@/components/ui/Tabs";
 import { DeleteButton } from "@/components/ui/DeleteButton";
+import { IncomeEditButton } from "@/components/records/IncomeEditButton";
 import { IncomeStatusSelect } from "@/components/income/IncomeStatusSelect";
 import { formatCurrency } from "@/lib/data";
 import type { IncomeEntry } from "@/lib/data";
@@ -57,6 +58,7 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                 {i.project && <div className="text-[12px] text-text-secondary mt-0.5 truncate">{i.project}</div>}
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <IncomeEditButton entry={i} />
                 <IncomeStatusSelect id={i.id} status={i.status} />
                 <DeleteButton table="income" id={i.id} />
               </div>
@@ -94,7 +96,10 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                     <IncomeStatusSelect id={i.id} status={i.status} />
                   </td>
                   <td className="px-3 py-4">
-                    <DeleteButton table="income" id={i.id} />
+                    <div className="flex items-center gap-0.5">
+                      <IncomeEditButton entry={i} />
+                      <DeleteButton table="income" id={i.id} />
+                    </div>
                   </td>
                 </tr>
               ))}
