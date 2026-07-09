@@ -32,10 +32,10 @@ export function SyncButton() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       {message && (
         <span
-          className={`text-[12px] max-w-72 truncate ${
+          className={`hidden sm:inline text-[12px] max-w-48 lg:max-w-72 truncate ${
             state === "error" ? "text-rose" : "text-emerald"
           }`}
           title={message}
@@ -46,14 +46,15 @@ export function SyncButton() {
       <button
         onClick={handleSync}
         disabled={state === "loading"}
-        className="flex items-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] px-4 py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50"
+        aria-label="סנכרון חשבונית ירוקה"
+        className="flex items-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50 shrink-0"
       >
         {state === "loading" ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <FolderSync className="w-4 h-4" strokeWidth={2} />
         )}
-        סנכרון חשבונית ירוקה
+        <span className="hidden sm:inline">סנכרון חשבונית ירוקה</span>
       </button>
     </div>
   );

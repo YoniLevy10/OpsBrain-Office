@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, Badge, KpiCard } from "@/components/ui/Primitives";
+import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
 import { fetchIncome } from "@/lib/queries";
@@ -17,7 +18,7 @@ export default async function IncomePage() {
   const overdue = incomeEntries.filter((i) => i.status === "באיחור").reduce((s, i) => s + i.amount, 0);
 
   return (
-    <div className="pb-16">
+    <div>
       <TopBar
         title="הכנסות"
         subtitle="כל התשלומים והחשבוניות"
@@ -39,15 +40,47 @@ export default async function IncomePage() {
         }
       />
 
-      <div className="px-6 md:px-9 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <KpiCard label="סה״כ החודש" value={formatCurrency(total)} icon={TrendingUp} accent="emerald" />
           <KpiCard label="שולם" value={formatCurrency(paid)} icon={CheckCircle2} accent="emerald" />
           <KpiCard label="ממתין" value={formatCurrency(pending)} icon={Clock} accent="brass" />
           <KpiCard label="באיחור" value={formatCurrency(overdue)} icon={AlertCircle} accent="rose" />
         </div>
 
-        <Card className="overflow-hidden">
+        <MobileCardList
+          isEmpty={incomeEntries.length === 0}
+          emptyMessage="אין עדיין הכנסות — הוסף את הראשונה עם הכפתור למעלה"
+        >
+          {incomeEntries.map((i) => (
+            <MobileCard key={i.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[14px]">{i.clientName}</div>
+                  {i.project && (
+                    <div className="text-[12px] text-text-secondary mt-0.5 truncate">{i.project}</div>
+                  )}
+                </div>
+                <Badge label={i.status} />
+              </div>
+              <MobileCardRow
+                label="סכום"
+                value={
+                  <span className="font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</span>
+                }
+              />
+              <MobileCardRow label="תאריך" value={i.date} />
+              {i.invoiceNumber && (
+                <MobileCardRow
+                  label="מס׳ חשבונית"
+                  value={<span className="font-nums">{i.invoiceNumber}</span>}
+                />
+              )}
+            </MobileCard>
+          ))}
+        </MobileCardList>
+
+        <Card className="overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13.5px]">
               <thead>

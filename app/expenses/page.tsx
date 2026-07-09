@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard } from "@/components/ui/Primitives";
+import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
 import { fetchExpenses } from "@/lib/queries";
@@ -25,7 +26,7 @@ export default async function ExpensesPage() {
   const oneTime = total - recurringTotal;
 
   return (
-    <div className="pb-16">
+    <div>
       <TopBar
         title="הוצאות"
         subtitle="כל ההוצאות והספקים"
@@ -43,21 +44,49 @@ export default async function ExpensesPage() {
               <Field label="תאריך" name="date" type="date" />
             </div>
             <label className="flex items-center gap-2 text-[13px] text-text-secondary">
-              <input type="checkbox" name="recurring" className="accent-[#35C79A] w-4 h-4" />
+              <input type="checkbox" name="recurring" className="accent-emerald w-4 h-4" />
               הוצאה חוזרת
             </label>
           </AddRecordPanel>
         }
       />
 
-      <div className="px-6 md:px-9 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <KpiCard label="סה״כ הוצאות החודש" value={formatCurrency(total)} icon={TrendingDown} accent="rose" />
           <KpiCard label="הוצאות חוזרות" value={formatCurrency(recurringTotal)} icon={RefreshCw} accent="blue" />
           <KpiCard label="הוצאות חד-פעמיות" value={formatCurrency(oneTime)} icon={Receipt} accent="brass" />
         </div>
 
-        <Card className="overflow-hidden">
+        <MobileCardList
+          isEmpty={expenseEntries.length === 0}
+          emptyMessage="אין עדיין הוצאות — הוסף את הראשונה עם הכפתור למעלה"
+        >
+          {expenseEntries.map((e) => (
+            <MobileCard key={e.id}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold text-[14px]">{e.vendor}</div>
+                  <span
+                    className={`inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${categoryColors[e.category] ?? "text-text-secondary bg-text-tertiary/10"}`}
+                  >
+                    {e.category}
+                  </span>
+                </div>
+                <div className="text-end shrink-0">
+                  <div className="font-nums font-semibold text-[14px]">{formatCurrency(e.amountILS)}</div>
+                  {e.currency === "USD" && (
+                    <div className="text-[11px] text-text-tertiary font-nums">${e.amount.toLocaleString()}</div>
+                  )}
+                </div>
+              </div>
+              <MobileCardRow label="תאריך" value={e.date} />
+              <MobileCardRow label="חוזר" value={e.recurring ? "כן" : "לא"} />
+            </MobileCard>
+          ))}
+        </MobileCardList>
+
+        <Card className="overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-[13.5px]">
               <thead>
