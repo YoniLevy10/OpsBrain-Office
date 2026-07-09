@@ -14,6 +14,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
+import { BankImportPanel } from "@/components/settings/BankImportPanel";
 import { UsdRateForm } from "@/components/settings/UsdRateForm";
 
 export const revalidate = 60;
@@ -119,6 +120,8 @@ export default async function SettingsPage() {
             </div>
           </div>
         </Card>
+
+        <BankImportPanel />
 
         <Card className="p-5">
           <SectionHeading title="סנכרון נתונים" subtitle="משיכת לקוחות, הכנסות והוצאות מחשבונית ירוקה" />

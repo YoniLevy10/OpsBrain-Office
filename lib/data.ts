@@ -64,6 +64,16 @@ export interface Subscription {
   status: "פעיל" | "מושהה";
 }
 
+export interface BankTransaction {
+  id: string;
+  bank: string;
+  date: string;
+  description: string;
+  amount: number;
+  balance: number | null;
+  reference: string;
+}
+
 export const clients: Client[] = [
   { id: "c1", company: "שרה נבות – ניהול נכסים", contact: "שרה נבות", email: "sara@navot-props.co.il", phone: "050-1234567", vat: "512345678", revenue: 54000, outstanding: 4500, activeSince: "2025-02-01", status: "פעיל" },
   { id: "c2", company: "גבעת הפסגה בע\"מ", contact: "דוד כהן", email: "david@givathapisga.co.il", phone: "052-2345678", vat: "513456789", revenue: 18200, outstanding: 0, activeSince: "2025-06-10", status: "פעיל" },

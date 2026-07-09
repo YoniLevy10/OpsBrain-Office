@@ -12,6 +12,7 @@ import {
   MoreHorizontal,
   FileSpreadsheet,
   Settings,
+  Landmark,
   X,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ const mainItems = [
 ];
 
 const moreItems = [
+  { href: "/bank", label: "בנק", icon: Landmark },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
   { href: "/reports", label: "דוחות", icon: FileSpreadsheet },
   { href: "/settings", label: "הגדרות", icon: Settings },

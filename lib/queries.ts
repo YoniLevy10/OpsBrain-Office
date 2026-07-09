@@ -7,6 +7,7 @@ import {
   IncomeEntry,
   ExpenseEntry,
   Subscription,
+  BankTransaction,
   clients as mockClients,
   incomeEntries as mockIncome,
   expenseEntries as mockExpenses,
@@ -167,3 +168,35 @@ export async function fetchSubscriptions(): Promise<{ rows: Subscription[]; live
   const bundle = await getFinanceBundle();
   return { rows: bundle.subscriptions, live: bundle.live.subscriptions };
 }
+
+const BANK_COLS = "id, bank, date, description, amount, balance, reference";
+
+async function loadBankTransactions(): Promise<{ rows: BankTransaction[]; live: boolean }> {
+  const sb = getSupabase();
+  if (!sb) return { rows: [], live: false };
+  const { data, error } = await sb
+    .from("ob_bank_transactions")
+    .select(BANK_COLS)
+    .order("date", { ascending: false })
+    .limit(2000);
+  if (error || !data) return { rows: [], live: false };
+  return {
+    rows: data.map((r: any) => ({
+      id: r.id,
+      bank: r.bank ?? "discount",
+      date: r.date ?? "",
+      description: r.description ?? "",
+      amount: Number(r.amount),
+      balance: r.balance != null ? Number(r.balance) : null,
+      reference: r.reference ?? "",
+    })),
+    live: true,
+  };
+}
+
+const getCachedBankTransactions = unstable_cache(loadBankTransactions, ["bank-transactions-v1"], {
+  revalidate: 45,
+  tags: [FINANCE_CACHE_TAG],
+});
+
+export const getBankTransactions = cache(getCachedBankTransactions);

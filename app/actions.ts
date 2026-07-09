@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag, revalidateTag } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { getUsdRate, setUsdRate } from "@/lib/meta";
+import { parseBankCsv } from "@/lib/bank-import";
 import { FINANCE_CACHE_TAG, META_CACHE_TAG } from "@/lib/cache-tags";
 
 type ActionResult = { ok: boolean; error?: string };
@@ -219,5 +220,69 @@ export async function saveUsdRate(rate: number): Promise<ActionResult> {
   revalidatePath("/settings");
   revalidatePath("/expenses");
   revalidatePath("/subscriptions");
+  return { ok: true };
+}
+
+export async function importBankCsv(formData: FormData): Promise<ActionResult & { imported?: number; skipped?: number }> {
+  const sb = getSupabase();
+  if (!sb) return { ok: false, error: NOT_CONFIGURED };
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: "לא נבחר קובץ" };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { ok: false, error: "הקובץ גדול מדי (מקסימום 5MB)" };
+  }
+
+  const text = await file.text();
+  const bank = String(formData.get("bank") || "discount");
+  const { rows, errors } = parseBankCsv(text, bank);
+
+  if (rows.length === 0) {
+    return { ok: false, error: errors[0] ?? "לא נמצאו תנועות בקובץ" };
+  }
+
+  let imported = 0;
+
+  for (const row of rows) {
+    const { data, error } = await sb
+      .from("ob_bank_transactions")
+      .upsert(
+        {
+          bank,
+          date: row.date,
+          description: row.description,
+          amount: row.amount,
+          balance: row.balance,
+          reference: row.reference,
+          import_hash: row.importHash,
+        },
+        { onConflict: "import_hash", ignoreDuplicates: true }
+      )
+      .select("id");
+
+    if (error) return { ok: false, error: error.message };
+    if (data && data.length > 0) imported++;
+  }
+
+  invalidateFinance();
+  revalidatePath("/bank");
+  revalidatePath("/settings");
+
+  return {
+    ok: true,
+    imported,
+    skipped: rows.length - imported,
+  };
+}
+
+export async function deleteBankTransaction(id: string): Promise<ActionResult> {
+  const sb = getSupabase();
+  if (!sb) return { ok: false, error: NOT_CONFIGURED };
+  const { error } = await sb.from("ob_bank_transactions").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  invalidateFinance();
+  revalidatePath("/bank");
   return { ok: true };
 }
