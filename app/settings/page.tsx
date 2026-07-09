@@ -1,7 +1,7 @@
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { SyncButton } from "@/components/ui/SyncButton";
-import { isGreenInvoiceConfigured } from "@/lib/greeninvoice";
+import { isGreenInvoiceConfigured, testGreenInvoiceConnection, getGreenInvoiceEnvLabel } from "@/lib/greeninvoice";
 import { getSupabase } from "@/lib/supabase";
 import { getLastSyncTime, getUsdRate } from "@/lib/meta";
 import {
@@ -61,6 +61,7 @@ function formatSyncTime(iso: string): string {
 
 export default async function SettingsPage() {
   const giConnected = isGreenInvoiceConfigured();
+  const giTest = giConnected ? await testGreenInvoiceConnection() : { ok: false as const };
   const sb = getSupabase();
   const sbConnected = Boolean(sb);
   const lastSync = await getLastSyncTime();
@@ -80,8 +81,14 @@ export default async function SettingsPage() {
           <SectionHeading title="סטטוס חיבורים" subtitle="מצב האינטגרציות הפעילות" />
           <StatusRow
             label="חשבונית ירוקה (Morning)"
-            connected={giConnected}
-            detail={giConnected ? "API מוגדר — ניתן לסנכרן נתונים" : "הוסף GREENINVOICE_API_ID ו-SECRET ב-Vercel"}
+            connected={giConnected && giTest.ok}
+            detail={
+              !giConnected
+                ? "הוסף GREENINVOICE_API_ID ו-SECRET ב-Vercel"
+                : giTest.ok
+                  ? `API פעיל · ${getGreenInvoiceEnvLabel()}`
+                  : giTest.error ?? "שגיאת חיבור"
+            }
           />
           <StatusRow
             label="Supabase"
