@@ -14,6 +14,12 @@ export const revalidate = 45;
 
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
 
+function defaultNextChargeDate(): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() + 1, 1);
+  return d.toISOString().slice(0, 10);
+}
+
 export default async function SubscriptionsPage() {
   const [bundle, usdRate] = await Promise.all([getFinanceBundle(), getUsdRate()]);
   const live = isAllLive([bundle.live.subscriptions, bundle.live.income]);
@@ -48,7 +54,7 @@ export default async function SubscriptionsPage() {
               <Field label="שער המרה (אם USD)" name="rate" type="number" defaultValue={String(usdRate)} />
               <SelectField label="מחזור חיוב" name="billing_cycle" options={["חודשי", "שנתי"]} />
             </div>
-            <Field label="חיוב הבא" name="next_charge" type="date" />
+            <Field label="חיוב הבא" name="next_charge" type="date" defaultValue={defaultNextChargeDate()} />
           </AddRecordPanel>
         }
       />
