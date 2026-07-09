@@ -14,12 +14,56 @@ export function Tabs({
   active,
   onChange,
   className,
+  variant = "underline",
 }: {
   tabs: Tab[];
   active: string;
   onChange: (id: string) => void;
   className?: string;
+  variant?: "underline" | "pills";
 }) {
+  if (variant === "pills") {
+    return (
+      <div
+        className={clsx(
+          "flex gap-1 p-1 rounded-xl bg-bg border border-border-soft overflow-x-auto scrollbar-none",
+          className
+        )}
+        role="tablist"
+      >
+        {tabs.map((tab) => {
+          const isActive = tab.id === active;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(tab.id)}
+              className={clsx(
+                "shrink-0 flex-1 min-w-0 px-3 py-2.5 rounded-lg text-[12.5px] sm:text-[13px] font-semibold transition-all",
+                isActive
+                  ? "bg-surface text-emerald card-shadow"
+                  : "text-text-secondary hover:text-text-primary hover:bg-surface/60"
+              )}
+            >
+              <span className="truncate">{tab.label}</span>
+              {tab.count !== undefined && tab.count > 0 && (
+                <span
+                  className={clsx(
+                    "ms-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold",
+                    isActive ? "bg-emerald/15 text-emerald" : "bg-surface-hover text-text-tertiary"
+                  )}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div
       className={clsx(

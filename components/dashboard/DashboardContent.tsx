@@ -12,11 +12,12 @@ import {
   Users,
   Sparkles,
   ArrowLeft,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/data";
 import type { ExpenseEntry, IncomeEntry, Subscription } from "@/lib/data";
-import type { CashFlowPoint, Notification } from "@/lib/analytics";
+import type { CashFlowPoint } from "@/lib/analytics";
 
 interface DashboardContentProps {
   incomeEntries: IncomeEntry[];
@@ -41,9 +42,33 @@ interface DashboardContentProps {
   };
 }
 
+function StatChip({
+  label,
+  value,
+  badge,
+  accent,
+}: {
+  label: string;
+  value: string;
+  badge?: string;
+  accent?: "rose" | "emerald" | "blue";
+}) {
+  const accentRing =
+    accent === "rose" ? "border-rose/20" : accent === "blue" ? "border-blue/20" : "border-emerald/20";
+
+  return (
+    <Card className={`p-4 min-w-0 flex-1 border ${accentRing}`}>
+      <p className="text-[11.5px] sm:text-[12.5px] text-text-secondary leading-snug">{label}</p>
+      <div className="flex items-end justify-between gap-2 mt-2">
+        <p className="font-nums text-[17px] sm:text-[20px] font-bold leading-none">{value}</p>
+        {badge && <Badge label={badge} />}
+      </div>
+    </Card>
+  );
+}
+
 export function DashboardContent({
   incomeEntries,
-  expenseEntries,
   subscriptions,
   cashFlowSeries,
   expenseByCategory,
@@ -62,8 +87,9 @@ export function DashboardContent({
   const recentIncome = incomeEntries.slice(0, 4);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <Tabs
+        variant="pills"
         tabs={[
           { id: "overview", label: "סקירה" },
           { id: "charts", label: "גרפים" },
@@ -74,9 +100,9 @@ export function DashboardContent({
       />
 
       <TabPanel active={tab} id="overview">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           <KpiCard
-            label="הכנסה חודשית (שולם)"
+            label="הכנסה (שולם)"
             value={formatCurrency(kpis.income)}
             delta={kpis.incomeDelta}
             deltaDirection={kpis.incomeDeltaDir}
@@ -96,45 +122,50 @@ export function DashboardContent({
           <KpiCard label="לקוחות פעילים" value={String(kpis.activeClients)} icon={Users} accent="blue" />
         </div>
 
-        <Card className="p-5 flex items-start gap-4 border-emerald/25 bg-emerald/[0.04] mt-6">
-          <div className="w-9 h-9 rounded-lg bg-emerald/10 flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="w-[18px] h-[18px] text-emerald" strokeWidth={2} />
-          </div>
-          <div className="flex-1">
-            <div className="text-[13px] font-semibold mb-1">תובנות</div>
-            <p className="text-[13.5px] text-text-secondary leading-relaxed">{insights.join(" ")}</p>
+        <Card className="p-4 sm:p-5 border-emerald/20 bg-gradient-to-l from-emerald/[0.06] to-transparent mt-4 sm:mt-6">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald/10 flex items-center justify-center shrink-0">
+              <Sparkles className="w-[18px] h-[18px] text-emerald" strokeWidth={2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[13px] font-bold mb-2">תובנה</div>
+              <ul className="space-y-2">
+                {insights.map((text) => (
+                  <li key={text} className="flex gap-2 text-[12.5px] sm:text-[13.5px] text-text-secondary leading-relaxed">
+                    <span className="text-emerald font-bold shrink-0 mt-0.5">•</span>
+                    <span>{text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          <Card className="p-5 flex items-center justify-between">
-            <div>
-              <div className="text-[13px] text-text-secondary">יתרה פתוחה מלקוחות</div>
-              <div className="font-nums text-[20px] font-bold mt-1">{formatCurrency(kpis.outstanding)}</div>
-            </div>
-            <Badge label={kpis.outstanding > 0 ? "פתוח" : "—"} />
-          </Card>
-          <Card className="p-5 flex items-center justify-between">
-            <div>
-              <div className="text-[13px] text-text-secondary">חשבוניות באיחור</div>
-              <div className="font-nums text-[20px] font-bold mt-1">{formatCurrency(kpis.overdueSum)}</div>
-            </div>
-            {kpis.overdueSum > 0 ? <Badge label="באיחור" /> : null}
-          </Card>
-          <Card className="p-5 flex items-center justify-between">
-            <div>
-              <div className="text-[13px] text-text-secondary">מנויים חוזרים חודשיים</div>
-              <div className="font-nums text-[20px] font-bold mt-1">{formatCurrency(kpis.recurring)}</div>
-            </div>
-            <Badge label="פעיל" />
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4 mt-4 sm:mt-6">
+          <StatChip
+            label="יתרה פתוחה"
+            value={formatCurrency(kpis.outstanding)}
+            badge={kpis.outstanding > 0 ? "פתוח" : undefined}
+          />
+          <StatChip
+            label="באיחור"
+            value={formatCurrency(kpis.overdueSum)}
+            badge={kpis.overdueSum > 0 ? "באיחור" : undefined}
+            accent="rose"
+          />
+          <StatChip
+            label="מנויים חודשיים"
+            value={formatCurrency(kpis.recurring)}
+            badge="פעיל"
+            accent="blue"
+          />
         </div>
       </TabPanel>
 
       <TabPanel active={tab} id="charts">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="p-5 lg:col-span-2">
-            <SectionHeading title="מגמת תזרים מזומנים" subtitle="הכנסות מול הוצאות — 7 חודשים אחרונים (נתונים חיים)" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="p-4 sm:p-5 lg:col-span-2">
+            <SectionHeading title="מגמת תזרים מזומנים" subtitle="הכנסות מול הוצאות — 7 חודשים אחרונים" />
             {cashFlowSeries.some((p) => p.income > 0 || p.expenses > 0) ? (
               <CashFlowChart data={cashFlowSeries} />
             ) : (
@@ -143,7 +174,7 @@ export function DashboardContent({
               </p>
             )}
           </Card>
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <SectionHeading title="פילוח הוצאות" subtitle={`לפי קטגוריה, ${monthLabel}`} />
             {expenseByCategory.length > 0 ? (
               <CategoryDonut data={expenseByCategory} />
@@ -155,43 +186,49 @@ export function DashboardContent({
       </TabPanel>
 
       <TabPanel active={tab} id="activity">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="p-5 lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <Card className="p-4 sm:p-5 lg:col-span-2">
             <SectionHeading title="חיובים קרובים" subtitle="המנויים הבאים שיחויבו" />
             <div className="divide-y divide-border-soft">
               {upcomingSubs.map((s) => (
-                <div key={s.id} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue/10 flex items-center justify-center text-[11px] font-bold text-blue">
+                <div key={s.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue/10 flex items-center justify-center text-[11px] font-bold text-blue shrink-0">
                       {s.vendor.slice(0, 2)}
                     </div>
-                    <div>
-                      <div className="text-[13.5px] font-medium">{s.vendor}</div>
-                      <div className="text-[12px] text-text-tertiary">חיוב הבא: {s.nextCharge}</div>
+                    <div className="min-w-0">
+                      <div className="text-[13.5px] font-medium truncate">{s.vendor}</div>
+                      <div className="text-[11.5px] text-text-tertiary flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {s.nextCharge}
+                      </div>
                     </div>
                   </div>
-                  <span className="font-nums text-[13px] font-semibold">{formatCurrency(s.priceILS)}</span>
+                  <span className="font-nums text-[13px] font-semibold shrink-0">{formatCurrency(s.priceILS)}</span>
                 </div>
               ))}
               {upcomingSubs.length === 0 && (
                 <p className="text-[13px] text-text-tertiary py-6 text-center">אין מנויים פעילים</p>
               )}
             </div>
-            <Link href="/subscriptions" className="mt-4 flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-emerald transition-colors w-fit">
+            <Link
+              href="/subscriptions"
+              className="mt-4 flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-emerald transition-colors w-fit"
+            >
               כל המנויים <ArrowLeft className="w-3.5 h-3.5" />
             </Link>
           </Card>
 
-          <Card className="p-5">
+          <Card className="p-4 sm:p-5">
             <SectionHeading title="הכנסות אחרונות" />
-            <div className="space-y-4">
+            <div className="space-y-3">
               {recentIncome.map((i) => (
-                <div key={i.id} className="flex items-start justify-between gap-2">
+                <div key={i.id} className="flex items-start justify-between gap-2 py-1">
                   <div className="min-w-0">
                     <p className="text-[13px] font-medium truncate">{i.clientName}</p>
                     <p className="text-[11.5px] text-text-tertiary truncate">{i.project}</p>
                   </div>
-                  <div className="text-left shrink-0">
+                  <div className="text-left shrink-0 space-y-1">
                     <span className="font-nums text-[12.5px] font-semibold block">
                       {formatCurrency(i.amount, i.currency)}
                     </span>
@@ -203,7 +240,10 @@ export function DashboardContent({
                 <p className="text-[13px] text-text-tertiary py-6 text-center">אין עדיין הכנסות</p>
               )}
             </div>
-            <Link href="/income" className="mt-4 flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-emerald transition-colors w-fit">
+            <Link
+              href="/income"
+              className="mt-4 flex items-center gap-1.5 text-[13px] text-text-secondary hover:text-emerald transition-colors w-fit"
+            >
               כל ההכנסות <ArrowLeft className="w-3.5 h-3.5" />
             </Link>
           </Card>

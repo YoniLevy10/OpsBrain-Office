@@ -62,37 +62,36 @@ export function KpiCard({
     blue: "bg-blue/10 text-blue",
   };
 
+  const isGood = deltaInvert ? deltaDirection === "down" : deltaDirection === "up";
+
   return (
-    <Card className="p-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] text-text-secondary font-medium">{label}</span>
+    <Card className="p-3.5 sm:p-5 flex flex-col justify-between gap-3 min-h-[108px] sm:min-h-[124px]">
+      <div className="flex items-start justify-between gap-2">
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center ${accentClasses[accent]}`}
+          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 ${accentClasses[accent]}`}
         >
           <Icon className="w-4 h-4" strokeWidth={2.25} />
         </div>
-      </div>
-      <div className="flex items-end justify-between">
-        <span className="font-nums text-[22px] sm:text-[26px] font-semibold tracking-tight">
-          {value}
-        </span>
-        {delta && (() => {
-          const isGood = deltaInvert ? deltaDirection === "down" : deltaDirection === "up";
-          return (
+        {delta && (
           <span
-            className={`flex items-center gap-0.5 text-[12.5px] font-semibold ${
-              isGood ? "text-emerald" : "text-rose"
+            className={`inline-flex items-center gap-0.5 text-[10.5px] sm:text-[12px] font-semibold px-1.5 py-0.5 rounded-md ${
+              isGood ? "text-emerald bg-emerald/8" : "text-rose bg-rose/8"
             }`}
           >
             {deltaDirection === "up" ? (
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-3 h-3" />
             ) : (
-              <ArrowDownRight className="w-3.5 h-3.5" />
+              <ArrowDownRight className="w-3 h-3" />
             )}
             {delta}
           </span>
-          );
-        })()}
+        )}
+      </div>
+      <div className="space-y-1">
+        <p className="text-[11px] sm:text-[13px] text-text-secondary font-medium leading-snug line-clamp-2">
+          {label}
+        </p>
+        <p className="font-nums text-[19px] sm:text-[25px] font-bold tracking-tight leading-none">{value}</p>
       </div>
     </Card>
   );

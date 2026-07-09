@@ -10,7 +10,7 @@ function shiftMonth(monthKey: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function MonthPicker({ month }: { month: string }) {
+export function MonthPicker({ month, fullWidth = false }: { month: string; fullWidth?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const isCurrent = month === getCurrentMonthKey();
@@ -23,7 +23,11 @@ export function MonthPicker({ month }: { month: string }) {
   }
 
   return (
-    <div className="flex items-center gap-1 bg-surface border border-border-soft rounded-lg p-1">
+    <div
+      className={`flex items-center gap-1 bg-surface border border-border-soft rounded-xl p-1 card-shadow ${
+        fullWidth ? "w-full justify-between" : ""
+      }`}
+    >
       <button
         type="button"
         onClick={() => navigate(shiftMonth(month, -1))}
@@ -32,7 +36,7 @@ export function MonthPicker({ month }: { month: string }) {
       >
         <ChevronRight className="w-4 h-4" />
       </button>
-      <div className="flex items-center gap-1.5 px-2 min-w-[120px] justify-center">
+      <div className={`flex items-center gap-1.5 px-2 justify-center ${fullWidth ? "flex-1" : "min-w-[120px]"}`}>
         <Calendar className="w-3.5 h-3.5 text-text-tertiary hidden sm:block" />
         <span className="text-[13px] font-semibold">{formatMonthLabel(month)}</span>
       </div>

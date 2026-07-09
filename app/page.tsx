@@ -87,15 +87,15 @@ export default async function DashboardPage({
     <div>
       <TopBar
         title="לוח בקרה"
-        subtitle={`סקירה כללית — ${formatMonthLabel(currentMonth)}`}
+        subtitle="סקירה כללית"
         live={live}
         notifications={notifications}
         action={<SyncButton />}
       />
 
-      <div className="px-4 sm:px-6 md:px-9">
-        <div className="mb-4 flex justify-end">
-          <MonthPicker month={currentMonth} />
+      <div className="px-4 sm:px-6 md:px-9 pb-6">
+        <div className="mb-4 mt-3 sm:mt-4">
+          <MonthPicker month={currentMonth} fullWidth />
         </div>
         <DashboardContent
           monthLabel={formatMonthLabel(currentMonth)}
