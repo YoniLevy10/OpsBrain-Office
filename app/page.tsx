@@ -17,6 +17,7 @@ import {
   fetchSubscriptions,
 } from "@/lib/queries";
 import { CashFlowChart } from "@/components/charts/CashFlowChart";
+import { SyncButton } from "@/components/ui/SyncButton";
 import { CategoryDonut } from "@/components/charts/CategoryDonut";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +89,7 @@ async function DashboardPage() {
         title="לוח בקרה"
         subtitle="סקירה כללית של מצב העסק"
         live={live}
+        action={<SyncButton />}
       />
 
       <div className="px-6 md:px-9 space-y-6">

@@ -69,3 +69,11 @@ create policy "ob_subscriptions_all" on public.ob_subscriptions for all using (t
 create index if not exists ob_income_date_idx on public.ob_income(date desc);
 create index if not exists ob_expenses_date_idx on public.ob_expenses(date desc);
 create index if not exists ob_subscriptions_next_charge_idx on public.ob_subscriptions(next_charge);
+
+-- === Green Invoice sync support (run this too) ===
+alter table public.ob_clients add column if not exists gi_id text;
+alter table public.ob_income add column if not exists gi_id text;
+alter table public.ob_expenses add column if not exists gi_id text;
+create unique index if not exists ob_clients_gi_id_key on public.ob_clients(gi_id) where gi_id is not null;
+create unique index if not exists ob_income_gi_id_key on public.ob_income(gi_id) where gi_id is not null;
+create unique index if not exists ob_expenses_gi_id_key on public.ob_expenses(gi_id) where gi_id is not null;
