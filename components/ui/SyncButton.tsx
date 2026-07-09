@@ -18,7 +18,7 @@ export function SyncButton() {
       if (data.ok) {
         setState("done");
         setMessage(
-          `סונכרן: ${data.synced.income} הכנסות, ${data.synced.clients} לקוחות, ${data.synced.expenses} הוצאות`
+          `סונכרן: ${data.synced.income} הכנסות, ${data.synced.clients} לקוחות, ${data.synced.expenses} הוצאות${data.synced.subscriptions ? `, ${data.synced.subscriptions} מנויים` : ""}`
         );
         router.refresh();
       } else {

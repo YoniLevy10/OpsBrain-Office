@@ -27,7 +27,7 @@ export function MobileCard({
 }) {
   return (
     <div
-      className={`bg-surface border border-border-soft rounded-xl p-4 space-y-2.5 ${className}`}
+      className={`bg-surface border border-border-soft rounded-xl p-4 space-y-2.5 card-shadow ${className}`}
     >
       {children}
     </div>

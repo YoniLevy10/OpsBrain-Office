@@ -2,16 +2,22 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, KpiCard, Badge } from "@/components/ui/Primitives";
 import { AddRecordPanel, Field, SelectField } from "@/components/ui/AddRecordPanel";
 import { formatCurrency } from "@/lib/data";
-import { fetchSubscriptions } from "@/lib/queries";
+import { fetchSubscriptions, fetchIncome } from "@/lib/queries";
 import { addSubscription } from "@/app/actions";
+import { withResolvedStatus, buildNotifications, isAllLive } from "@/lib/analytics";
 import { RefreshCw, Calendar, Layers } from "lucide-react";
+import { DeleteButton } from "@/components/ui/DeleteButton";
+import { SubscriptionEditButton } from "@/components/records/SubscriptionEditButton";
 
 export const dynamic = "force-dynamic";
 
 const categories = ["AI", "אחסון", "תוכנה", "מאגר מידע", "משרד", "שיווק", "אחר"];
 
 export default async function SubscriptionsPage() {
-  const { rows: subscriptions, live } = await fetchSubscriptions();
+  const [subsRes, incomeRes] = await Promise.all([fetchSubscriptions(), fetchIncome()]);
+  const live = isAllLive([subsRes.live, incomeRes.live]);
+  const subscriptions = subsRes.rows;
+  const notifications = buildNotifications(withResolvedStatus(incomeRes.rows), subscriptions);
 
   const monthlyTotal = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
@@ -25,6 +31,7 @@ export default async function SubscriptionsPage() {
         title="מנויים"
         subtitle="כל הכלים והתשתיות שאתה משלם עליהם"
         live={live}
+        notifications={notifications}
         action={
           <AddRecordPanel buttonLabel="מנוי חדש" title="הוספת מנוי" action={addSubscription}>
             <Field label="ספק" name="vendor" required placeholder="לדוגמה: Cursor" />
@@ -56,7 +63,11 @@ export default async function SubscriptionsPage() {
                 <div className="w-10 h-10 rounded-xl bg-blue/10 flex items-center justify-center text-[13px] font-bold text-blue">
                   {s.vendor.slice(0, 2)}
                 </div>
-                <Badge label={s.status} />
+                <div className="flex items-center gap-1 shrink-0">
+                  <SubscriptionEditButton sub={s} />
+                  <Badge label={s.status} />
+                  <DeleteButton table="subscriptions" id={s.id} />
+                </div>
               </div>
               <div className="font-semibold text-[14.5px]">{s.vendor}</div>
               <div className="text-[12px] text-text-tertiary mt-0.5">{s.category}</div>

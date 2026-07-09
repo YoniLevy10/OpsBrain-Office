@@ -13,8 +13,9 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#161922",
+          background: "#FFFFFF",
           borderRadius: 8,
+          border: "1px solid #E2E7EF",
         }}
       >
         <div
@@ -22,7 +23,7 @@ export default function Icon() {
             width: 20,
             height: 20,
             borderRadius: 4,
-            background: "rgba(74, 212, 168, 0.2)",
+            background: "rgba(13, 155, 115, 0.12)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -31,7 +32,7 @@ export default function Icon() {
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path
               d="M22 12h-4l-3 9L9 3l-3 9H2"
-              stroke="#4AD4A8"
+              stroke="#0D9B73"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
