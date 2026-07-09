@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import {
   LayoutDashboard,
   Users,
@@ -9,7 +10,6 @@ import {
   TrendingDown,
   RefreshCw,
   Settings,
-  Activity,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -27,16 +27,10 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-l border-border bg-bg-elevated h-screen sticky top-0 card-shadow">
-      <div className="px-6 pt-7 pb-6 flex items-center gap-2.5">
-        <div className="relative w-8 h-8 rounded-lg bg-emerald/10 flex items-center justify-center">
-          <Activity className="w-4.5 h-4.5 text-emerald" strokeWidth={2.25} />
-        </div>
-        <div>
-          <div className="font-display font-bold text-[15px] tracking-tight leading-none">
-            OpsBrain
-          </div>
-          <div className="text-[11px] text-text-tertiary mt-1 leading-none">Finance</div>
-        </div>
+      <div className="px-6 pt-7 pb-6">
+        <Link href="/" className="block hover:opacity-90 transition-opacity">
+          <BrandLogo size={32} />
+        </Link>
       </div>
 
       <nav className="flex-1 px-3 space-y-0.5">

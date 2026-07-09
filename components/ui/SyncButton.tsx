@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FolderSync, Loader2 } from "lucide-react";
+import { FolderSync } from "lucide-react";
+import { BrainMark } from "@/components/brand/BrainMark";
 
 export function SyncButton() {
   const [state, setState] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -50,7 +51,9 @@ export function SyncButton() {
         className="flex items-center gap-1.5 bg-surface border border-border text-text-primary font-semibold text-[13px] px-3 sm:px-4 py-2.5 rounded-lg hover:bg-surface-hover transition-colors disabled:opacity-50 shrink-0"
       >
         {state === "loading" ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex">
+            <BrainMark className="w-full h-full" variant="on-dark" />
+          </span>
         ) : (
           <FolderSync className="w-4 h-4" strokeWidth={2} />
         )}

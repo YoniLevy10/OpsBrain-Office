@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Users, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Search, X, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { BrainMark } from "@/components/brand/BrainMark";
 
 interface SearchResult {
   type: string;
@@ -109,7 +110,11 @@ export function GlobalSearch() {
                 placeholder="חפש לקוחות, הכנסות, הוצאות..."
                 className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-text-tertiary"
               />
-              {loading && <Loader2 className="w-4 h-4 animate-spin text-text-tertiary" />}
+              {loading && (
+                <span className="w-4 h-4 brain-loader rounded overflow-hidden inline-flex shrink-0">
+                  <BrainMark className="w-full h-full" variant="on-dark" />
+                </span>
+              )}
               <button onClick={() => setOpen(false)} aria-label="סגור" className="text-text-tertiary hover:text-text-primary">
                 <X className="w-4 h-4" />
               </button>
