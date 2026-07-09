@@ -61,6 +61,11 @@ alter table public.ob_income enable row level security;
 alter table public.ob_expenses enable row level security;
 alter table public.ob_subscriptions enable row level security;
 
+drop policy if exists "ob_clients_all" on public.ob_clients;
+drop policy if exists "ob_income_all" on public.ob_income;
+drop policy if exists "ob_expenses_all" on public.ob_expenses;
+drop policy if exists "ob_subscriptions_all" on public.ob_subscriptions;
+
 create policy "ob_clients_all" on public.ob_clients for all using (true) with check (true);
 create policy "ob_income_all" on public.ob_income for all using (true) with check (true);
 create policy "ob_expenses_all" on public.ob_expenses for all using (true) with check (true);

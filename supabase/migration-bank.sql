@@ -17,4 +17,5 @@ create unique index if not exists ob_bank_import_hash_key on public.ob_bank_tran
 create index if not exists ob_bank_date_idx on public.ob_bank_transactions(date desc);
 
 alter table public.ob_bank_transactions enable row level security;
+drop policy if exists "ob_bank_all" on public.ob_bank_transactions;
 create policy "ob_bank_all" on public.ob_bank_transactions for all using (true) with check (true);
