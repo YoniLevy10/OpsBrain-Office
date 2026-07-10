@@ -1,25 +1,23 @@
 import sharp from "sharp";
-import { mkdirSync, readFileSync } from "fs";
+import { mkdirSync } from "fs";
 import { join } from "path";
 
 const ROOT = process.cwd();
-const BRAND_SVG = join(ROOT, "public", "brand", "brain-icon.svg");
+const BRAND_ICON = join(ROOT, "public", "brand", "brain-icon.png");
 const OUT_PUBLIC = join(ROOT, "public", "icons");
 const OUT_APP = join(ROOT, "app");
 
 mkdirSync(OUT_PUBLIC, { recursive: true });
 
-const svg = readFileSync(BRAND_SVG);
-
 async function writePng(path, size, extend = 0) {
-  let img = sharp(svg).resize(size, size, { fit: "contain", background: "#000000" });
+  let img = sharp(BRAND_ICON).resize(size, size, { fit: "contain", background: "#121820" });
   if (extend > 0) {
     img = img.extend({
       top: extend,
       bottom: extend,
       left: extend,
       right: extend,
-      background: { r: 0, g: 0, b: 0, alpha: 1 },
+      background: { r: 18, g: 24, b: 32, alpha: 1 },
     });
   }
   await img.png().toFile(path);

@@ -10,7 +10,10 @@ export const metadata: Metadata = {
   description: "המערכת התפעולית הפיננסית של העסק שלך",
   applicationName: "OpsBrain Finance",
   icons: {
-    icon: [{ url: "/brand/brain-icon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/brand/brain-icon.png", sizes: "512x512", type: "image/png" },
+      { url: "/brand/brain-icon.svg", type: "image/svg+xml" },
+    ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
   appleWebApp: {
@@ -24,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFFFFF",
+  themeColor: "#121820",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
