@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TopBar } from "@/components/layout/TopBar";
 import { Card, Badge, KpiCard } from "@/components/ui/Primitives";
 import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
@@ -70,7 +71,9 @@ export default async function ClientsPage() {
             <MobileCard key={c.id}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <div className="font-semibold text-[14px]">{c.company}</div>
+                  <Link href={`/clients/${c.id}`} className="font-semibold text-[14px] hover:text-emerald transition-colors">
+                    {c.company}
+                  </Link>
                   {c.contact && <div className="text-[12px] text-text-secondary mt-0.5">{c.contact}</div>}
                 </div>
                 <div className="flex items-center gap-0.5 shrink-0">
@@ -119,7 +122,9 @@ export default async function ClientsPage() {
                 {clients.map((c) => (
                   <tr key={c.id} className="border-b border-border-soft last:border-0 hover:bg-surface-hover/60 transition-colors">
                     <td className="px-5 py-4">
-                      <div className="font-semibold">{c.company}</div>
+                      <Link href={`/clients/${c.id}`} className="font-semibold hover:text-emerald transition-colors">
+                        {c.company}
+                      </Link>
                       <div className="flex items-center gap-3 text-[12px] text-text-tertiary mt-1">
                         {c.email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" /> {c.email}</span>}
                         {c.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.phone}</span>}

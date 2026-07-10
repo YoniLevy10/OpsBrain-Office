@@ -46,6 +46,25 @@ function mapExpenseCategory(e: any): string {
   return "אחר";
 }
 
+async function linkIncomeToClients(sb: NonNullable<ReturnType<typeof getSupabase>>) {
+  const { data: clients } = await sb.from("ob_clients").select("id, company");
+  if (!clients?.length) return;
+
+  const byName = new Map(clients.map((c: { id: string; company: string }) => [c.company, c.id]));
+
+  const { data: incomeRows } = await sb
+    .from("ob_income")
+    .select("id, client_id, client_name")
+    .is("client_id", null);
+
+  for (const row of incomeRows ?? []) {
+    const clientId = byName.get(row.client_name);
+    if (clientId) {
+      await sb.from("ob_income").update({ client_id: clientId }).eq("id", row.id);
+    }
+  }
+}
+
 async function enrichClientFinancials(sb: NonNullable<ReturnType<typeof getSupabase>>) {
   const { data: income } = await sb.from("ob_income").select("*");
   const { data: clients } = await sb.from("ob_clients").select("*");
@@ -54,6 +73,7 @@ async function enrichClientFinancials(sb: NonNullable<ReturnType<typeof getSupab
   for (const c of clients) {
     const related = income.filter(
       (i: any) =>
+        i.client_id === c.id ||
         i.client_name === c.company ||
         (c.company && String(i.client_name).includes(String(c.company).split(" ")[0]))
     );
@@ -168,12 +188,19 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
       if (!error) clientUpserts++;
     }
 
+    const { data: dbClients } = await sb.from("ob_clients").select("id, company");
+    const clientIdByName = new Map(
+      (dbClients ?? []).map((c: { id: string; company: string }) => [c.company, c.id])
+    );
+
     for (const d of documents as any[]) {
       const amount = Number(d.amount ?? d.total ?? 0);
       const isCredit = Number(d.type) === 330;
+      const clientName = d.client?.name ?? "ללא שם";
       const row = {
         gi_id: String(d.id),
-        client_name: d.client?.name ?? "ללא שם",
+        client_id: clientIdByName.get(clientName) ?? null,
+        client_name: clientName,
         project: d.description ?? d.remarks ?? "",
         amount: isCredit ? -Math.abs(amount) : amount,
         currency: d.currency === "USD" ? "USD" : "ILS",
@@ -206,6 +233,7 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
       if (!error) expenseUpserts++;
     }
 
+    await linkIncomeToClients(sb);
     await enrichClientFinancials(sb);
     const subscriptionUpserts = await syncSubscriptionsFromExpenses(sb);
     await setLastSyncTime(new Date().toISOString());

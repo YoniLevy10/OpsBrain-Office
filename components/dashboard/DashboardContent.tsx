@@ -5,6 +5,9 @@ import { Card, KpiCard, Badge, SectionHeading } from "@/components/ui/Primitives
 import { Tabs, TabPanel } from "@/components/ui/Tabs";
 import { CashFlowChart } from "@/components/charts/CashFlowChart";
 import { CategoryDonut } from "@/components/charts/CategoryDonut";
+import { ArAgingChart } from "@/components/charts/ArAgingChart";
+import { BankFlowChart } from "@/components/charts/BankFlowChart";
+import { ActivityFeed, ActivityFeedFooter } from "@/components/dashboard/ActivityFeed";
 import {
   Wallet,
   TrendingUp,
@@ -17,7 +20,12 @@ import {
 import Link from "next/link";
 import { formatCurrency } from "@/lib/data";
 import type { ExpenseEntry, IncomeEntry, Subscription } from "@/lib/data";
-import type { CashFlowPoint } from "@/lib/analytics";
+import type {
+  ActivityItem,
+  ArAgingBucket,
+  BankFlowPoint,
+  CashFlowPoint,
+} from "@/lib/analytics";
 
 interface DashboardContentProps {
   incomeEntries: IncomeEntry[];
@@ -25,6 +33,9 @@ interface DashboardContentProps {
   subscriptions: Subscription[];
   cashFlowSeries: CashFlowPoint[];
   expenseByCategory: { name: string; value: number; color: string }[];
+  arAging: ArAgingBucket[];
+  bankFlow: BankFlowPoint[];
+  activityFeed: ActivityItem[];
   insights: string[];
   monthLabel: string;
   kpis: {
@@ -72,6 +83,9 @@ export function DashboardContent({
   subscriptions,
   cashFlowSeries,
   expenseByCategory,
+  arAging,
+  bankFlow,
+  activityFeed,
   insights,
   monthLabel,
   kpis,
@@ -93,7 +107,7 @@ export function DashboardContent({
         tabs={[
           { id: "overview", label: "סקירה" },
           { id: "charts", label: "גרפים" },
-          { id: "activity", label: "פעילות", count: recentIncome.length + upcomingSubs.length },
+          { id: "activity", label: "פעילות", count: activityFeed.length },
         ]}
         active={tab}
         onChange={setTab}
@@ -170,7 +184,7 @@ export function DashboardContent({
               <CashFlowChart data={cashFlowSeries} />
             ) : (
               <p className="text-[13px] text-text-tertiary py-10 text-center">
-                אין עדיין מספיק נתונים לגרף — סנכרן מחשבונית ירוקה או הוסף רשומות
+                אין עדיין מספיק נתונים לגרף — הוסף רשומות או ייבא CSV בנק
               </p>
             )}
           </Card>
@@ -182,13 +196,32 @@ export function DashboardContent({
               <p className="text-[13px] text-text-tertiary py-10 text-center">אין הוצאות החודש</p>
             )}
           </Card>
+          <Card className="p-4 sm:p-5">
+            <SectionHeading title="גיול חובות" subtitle="חשבוניות פתוחות לפי גיל" />
+            <ArAgingChart data={arAging} />
+          </Card>
+          <Card className="p-4 sm:p-5 lg:col-span-2">
+            <SectionHeading title="תזרים בנקאי" subtitle="מייבוא CSV — 6 חודשים" />
+            <BankFlowChart data={bankFlow} />
+          </Card>
         </div>
+        <Link
+          href="/analytics"
+          className="mt-4 inline-flex items-center gap-1.5 text-[13px] text-emerald hover:underline"
+        >
+          כל הגרפים והאנליטיקה ←
+        </Link>
       </TabPanel>
 
       <TabPanel active={tab} id="activity">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card className="p-4 sm:p-5 lg:col-span-2">
-            <SectionHeading title="חיובים קרובים" subtitle="המנויים הבאים שיחויבו" />
+            <SectionHeading title="פעילות אחרונה" subtitle="הכנסות, הוצאות, בנק וסנכרונים" />
+            <ActivityFeed items={activityFeed} />
+            <ActivityFeedFooter />
+          </Card>
+          <Card className="p-4 sm:p-5">
+            <SectionHeading title="חיובים קרובים" subtitle="מנויים שיחויבו בקרוב" />
             <div className="divide-y divide-border-soft">
               {upcomingSubs.map((s) => (
                 <div key={s.id} className="flex items-center justify-between gap-3 py-3">

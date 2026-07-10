@@ -88,9 +88,9 @@ export default async function ReportsPage({
         <Card className="p-5">
           <SectionHeading title="ייצוא נתונים" subtitle="הורדת קבצי CSV לפתיחה ב-Excel או Google Sheets" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
-            <ExportButton href="/api/export?type=summary" label="סיכום חודשי" />
-            <ExportButton href="/api/export?type=income" label="כל ההכנסות" />
-            <ExportButton href="/api/export?type=expenses" label="כל ההוצאות" />
+            <ExportButton href={`/api/export?type=summary&month=${month}`} label="סיכום חודשי" />
+            <ExportButton href={`/api/export?type=income&month=${month}`} label="הכנסות (חודש)" />
+            <ExportButton href={`/api/export?type=expenses&month=${month}`} label="הוצאות (חודש)" />
             <ExportButton href="/api/export?type=clients" label="כל הלקוחות" />
           </div>
         </Card>

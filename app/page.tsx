@@ -2,8 +2,8 @@ import { TopBar } from "@/components/layout/TopBar";
 import { DashboardContent } from "@/components/dashboard/DashboardContent";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { MonthPicker } from "@/components/ui/MonthPicker";
-import { formatCurrency } from "@/lib/data";
-import { getFinanceBundle } from "@/lib/queries";
+import { getFinanceBundle, getBankTransactions } from "@/lib/queries";
+import { getLastSyncTime } from "@/lib/meta";
 import {
   withResolvedStatus,
   filterIncomeByMonth,
@@ -21,6 +21,11 @@ import {
   getPreviousMonthKey,
   buildNotifications,
   formatMonthLabel,
+  buildArAgingBuckets,
+  buildBankFlowSeries,
+  buildActivityFeed,
+  buildInsights,
+  isInMonth,
 } from "@/lib/analytics";
 
 export const revalidate = 45;
@@ -33,7 +38,11 @@ export default async function DashboardPage({
   searchParams: Promise<{ month?: string }>;
 }) {
   const params = await searchParams;
-  const bundle = await getFinanceBundle();
+  const [bundle, bankData, lastSyncAt] = await Promise.all([
+    getFinanceBundle(),
+    getBankTransactions(),
+    getLastSyncTime(),
+  ]);
   const live = isAllLive([
     bundle.live.clients,
     bundle.live.income,
@@ -61,6 +70,7 @@ export default async function DashboardPage({
   const profit = income - expenses;
   const prevIncomeSum = sumPaidIncome(prevIncome);
   const prevExpensesSum = sumExpenses(prevExpenses);
+  const prevProfit = prevIncomeSum - prevExpensesSum;
 
   const recurring = subscriptions
     .filter((s) => s.status === "פעיל" && s.billingCycle === "חודשי")
@@ -71,15 +81,29 @@ export default async function DashboardPage({
 
   const cashFlowSeries = buildCashFlowSeries(incomeEntries, expenseEntries);
   const expenseCategoryData = expenseByCategory(monthExpenses, donutPalette);
+  const arAging = buildArAgingBuckets(incomeEntries);
+  const monthBankTx = bankData.rows.filter((t) => isInMonth(t.date, currentMonth));
+  const bankNet = monthBankTx.reduce((s, t) => s + t.amount, 0);
+  const activityFeed = buildActivityFeed({
+    income: incomeEntries,
+    expenses: expenseEntries,
+    bank: bankData.rows,
+    lastSyncAt,
+    limit: 8,
+  });
 
-  const insights: string[] = [];
-  if (profit > 0) insights.push(`רווח נקי חיובי של ${formatCurrency(profit)} החודש.`);
-  else if (profit < 0) insights.push(`שים לב: ההוצאות (${formatCurrency(expenses)}) גבוהות מההכנסות ששולמו (${formatCurrency(income)}).`);
-  const aiSpend = expenseCategoryData.find((c) => c.name === "AI")?.value ?? 0;
-  if (aiSpend > 0) insights.push(`ההוצאה החודשית על כלי AI: ${formatCurrency(aiSpend)}.`);
-  if (overdueSum > 0) insights.push(`${formatCurrency(overdueSum)} בחשבוניות באיחור — שווה לשלוח תזכורת.`);
-  if (recurring > 0) insights.push(`המנויים הקבועים מסתכמים ב-${formatCurrency(recurring)}/חודש.`);
-  if (insights.length === 0) insights.push("הוסף נתונים או סנכרן מחשבונית ירוקה כדי לקבל תובנות.");
+  const insights = buildInsights({
+    profit,
+    income,
+    expenses,
+    prevProfit,
+    overdueSum,
+    outstanding,
+    recurring,
+    expenseByCategory: expenseCategoryData,
+    arAging,
+    bankNet: bankData.rows.length > 0 ? bankNet : undefined,
+  });
 
   const notifications = buildNotifications(incomeEntries, subscriptions);
 
@@ -104,6 +128,9 @@ export default async function DashboardPage({
           subscriptions={subscriptions}
           cashFlowSeries={cashFlowSeries}
           expenseByCategory={expenseCategoryData}
+          arAging={arAging}
+          bankFlow={buildBankFlowSeries(bankData.rows, 6)}
+          activityFeed={activityFeed}
           insights={insights}
           kpis={{
             income,

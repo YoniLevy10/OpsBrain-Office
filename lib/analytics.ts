@@ -1,4 +1,4 @@
-import type { Client, ExpenseEntry, IncomeEntry, IncomeStatus } from "./data";
+import type { BankTransaction, Client, ExpenseEntry, IncomeEntry, IncomeStatus } from "./data";
 
 const HEBREW_MONTHS = [
   "ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני",
@@ -207,4 +207,291 @@ export function buildNotifications(
   }
 
   return notifications.slice(0, 8);
+}
+
+export interface ArAgingBucket {
+  label: string;
+  amount: number;
+  count: number;
+  color: string;
+}
+
+/** Open receivables grouped by age (0-30, 31-60, 61-90, 90+ days). */
+export function buildArAgingBuckets(income: IncomeEntry[]): ArAgingBucket[] {
+  const resolved = withResolvedStatus(income);
+  const open = resolved.filter((i) => {
+    const st = resolveIncomeStatus(i);
+    return st === "ממתין" || st === "באיחור";
+  });
+
+  const buckets = [
+    { label: "0–30 יום", min: 0, max: 30, color: "#2F6FED" },
+    { label: "31–60 יום", min: 31, max: 60, color: "#C98A1A" },
+    { label: "61–90 יום", min: 61, max: 90, color: "#DC4A62" },
+    { label: "90+ יום", min: 91, max: Infinity, color: "#7C5FD4" },
+  ];
+
+  const now = Date.now();
+  return buckets.map(({ label, min, max, color }) => {
+    const items = open.filter((i) => {
+      if (!i.date) return min === 0;
+      const days = Math.floor((now - new Date(i.date).getTime()) / (1000 * 60 * 60 * 24));
+      return days >= min && days <= max;
+    });
+    return {
+      label,
+      amount: items.reduce((s, i) => s + i.amount, 0),
+      count: items.length,
+      color,
+    };
+  });
+}
+
+export interface ClientRevenueRow {
+  id: string;
+  name: string;
+  revenue: number;
+  outstanding: number;
+}
+
+export function buildClientRevenueRanking(
+  clients: Client[],
+  income: IncomeEntry[],
+  limit = 8
+): ClientRevenueRow[] {
+  const enriched = enrichClients(clients, income);
+  return enriched
+    .filter((c) => c.revenue > 0 || c.outstanding > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit)
+    .map((c) => ({
+      id: c.id,
+      name: c.company,
+      revenue: c.revenue,
+      outstanding: c.outstanding,
+    }));
+}
+
+export interface ProfitTrendPoint {
+  month: string;
+  profit: number;
+  income: number;
+  expenses: number;
+}
+
+export function buildProfitTrend(
+  income: IncomeEntry[],
+  expenses: ExpenseEntry[],
+  months = 12
+): ProfitTrendPoint[] {
+  const resolved = withResolvedStatus(income);
+  const now = new Date();
+  const series: ProfitTrendPoint[] = [];
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthIncome = filterIncomeByMonth(resolved, key)
+      .filter((i) => resolveIncomeStatus(i) === "שולם")
+      .reduce((s, i) => s + i.amount, 0);
+    const monthExpenses = filterExpensesByMonth(expenses, key)
+      .reduce((s, e) => s + e.amountILS, 0);
+    series.push({
+      month: HEBREW_MONTHS[d.getMonth()],
+      income: monthIncome,
+      expenses: monthExpenses,
+      profit: monthIncome - monthExpenses,
+    });
+  }
+  return series;
+}
+
+export interface BankFlowPoint {
+  month: string;
+  inflow: number;
+  outflow: number;
+  net: number;
+}
+
+export function buildBankFlowSeries(
+  transactions: BankTransaction[],
+  months = 6
+): BankFlowPoint[] {
+  const now = new Date();
+  const series: BankFlowPoint[] = [];
+
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthTx = transactions.filter((t) => isInMonth(t.date, key));
+    const inflow = monthTx.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const outflow = monthTx.filter((t) => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+    series.push({
+      month: HEBREW_MONTHS[d.getMonth()],
+      inflow,
+      outflow,
+      net: inflow - outflow,
+    });
+  }
+  return series;
+}
+
+export function incomeForClient(income: IncomeEntry[], clientId: string, clientName: string): IncomeEntry[] {
+  const resolved = withResolvedStatus(income);
+  return resolved.filter(
+    (i) =>
+      i.clientId === clientId ||
+      i.clientName === clientName ||
+      (clientName && i.clientName.includes(clientName.split(" ")[0]))
+  );
+}
+
+export interface ActivityItem {
+  id: string;
+  type: "income" | "expense" | "bank" | "sync";
+  title: string;
+  subtitle: string;
+  amount?: number;
+  date: string;
+  href: string;
+}
+
+export function buildActivityFeed(input: {
+  income: IncomeEntry[];
+  expenses: ExpenseEntry[];
+  bank: BankTransaction[];
+  lastSyncAt?: string | null;
+  limit?: number;
+}): ActivityItem[] {
+  const { income, expenses, bank, lastSyncAt, limit = 12 } = input;
+  const items: ActivityItem[] = [];
+
+  for (const i of income.slice(0, 20)) {
+    items.push({
+      id: `income-${i.id}`,
+      type: "income",
+      title: i.clientName,
+      subtitle: i.project || i.invoiceNumber || i.status,
+      amount: i.amount,
+      date: i.date,
+      href: `/income?highlight=${i.id}`,
+    });
+  }
+
+  for (const e of expenses.slice(0, 20)) {
+    items.push({
+      id: `expense-${e.id}`,
+      type: "expense",
+      title: e.vendor,
+      subtitle: e.category,
+      amount: -e.amountILS,
+      date: e.date,
+      href: `/expenses?highlight=${e.id}`,
+    });
+  }
+
+  for (const t of bank.slice(0, 20)) {
+    items.push({
+      id: `bank-${t.id}`,
+      type: "bank",
+      title: t.description.slice(0, 60) || "תנועת בנק",
+      subtitle: t.bank,
+      amount: t.amount,
+      date: t.date,
+      href: `/bank?highlight=${t.id}`,
+    });
+  }
+
+  if (lastSyncAt) {
+    items.push({
+      id: "sync-last",
+      type: "sync",
+      title: "סנכרון חשבונית ירוקה",
+      subtitle: "עודכן בהצלחה",
+      date: lastSyncAt.slice(0, 10),
+      href: "/settings",
+    });
+  }
+
+  return items
+    .sort((a, b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0))
+    .slice(0, limit);
+}
+
+export function buildInsights(input: {
+  profit: number;
+  income: number;
+  expenses: number;
+  prevProfit: number;
+  overdueSum: number;
+  outstanding: number;
+  recurring: number;
+  expenseByCategory: { name: string; value: number }[];
+  arAging: ArAgingBucket[];
+  bankNet?: number;
+}): string[] {
+  const insights: string[] = [];
+  const {
+    profit,
+    income,
+    expenses,
+    prevProfit,
+    overdueSum,
+    outstanding,
+    recurring,
+    expenseByCategory,
+    arAging,
+    bankNet,
+  } = input;
+
+  if (profit > 0) {
+    insights.push(`רווח נקי חיובי של ₪${profit.toLocaleString()} החודש.`);
+  } else if (profit < 0) {
+    insights.push(
+      `שים לב: ההוצאות (₪${expenses.toLocaleString()}) גבוהות מההכנסות ששולמו (₪${income.toLocaleString()}).`
+    );
+  }
+
+  if (prevProfit !== 0 && profit !== prevProfit) {
+    const pct = Math.round(((profit - prevProfit) / Math.abs(prevProfit)) * 100);
+    if (Math.abs(pct) >= 5) {
+      insights.push(
+        `הרווח ${pct > 0 ? "עלה" : "ירד"} ב-${Math.abs(pct)}% לעומת החודש הקודם.`
+      );
+    }
+  }
+
+  const aiSpend = expenseByCategory.find((c) => c.name === "AI")?.value ?? 0;
+  if (aiSpend > 0) insights.push(`ההוצאה החודשית על כלי AI: ₪${aiSpend.toLocaleString()}.`);
+
+  if (overdueSum > 0) {
+    insights.push(`₪${overdueSum.toLocaleString()} בחשבוניות באיחור — שווה לשלוח תזכורת.`);
+  }
+
+  if (outstanding > 0 && overdueSum === 0) {
+    insights.push(`₪${outstanding.toLocaleString()} ממתינים לגבייה — הכל בזמן.`);
+  }
+
+  if (recurring > 0) {
+    insights.push(`המנויים הקבועים מסתכמים ב-₪${recurring.toLocaleString()}/חודש.`);
+  }
+
+  const oldAr = arAging.find((b) => b.label === "90+ יום");
+  if (oldAr && oldAr.amount > 0) {
+    insights.push(
+      `${oldAr.count} חשבוניות ישנות (90+ יום) בסך ₪${oldAr.amount.toLocaleString()} — דורש טיפול.`
+    );
+  }
+
+  if (bankNet != null && bankNet !== 0) {
+    insights.push(
+      `תזרים בנקאי נטו החודש: ${bankNet > 0 ? "+" : ""}₪${Math.abs(bankNet).toLocaleString()}.`
+    );
+  }
+
+  if (insights.length === 0) {
+    insights.push("הוסף נתונים או ייבא CSV בנק כדי לקבל תובנות מלאות.");
+  }
+
+  return insights.slice(0, 6);
 }

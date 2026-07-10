@@ -1,5 +1,5 @@
 const CACHE_NAME = "opsbrain-v4";
-const PRECACHE_URLS = ["/", "/clients", "/income", "/expenses", "/subscriptions", "/brand/brain-icon.png", "/brand/brain-icon.svg"];
+const PRECACHE_URLS = ["/", "/analytics", "/clients", "/income", "/expenses", "/subscriptions", "/bank", "/reports", "/settings", "/brand/brain-icon.png", "/brand/brain-icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

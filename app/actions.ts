@@ -5,6 +5,7 @@ import { getSupabase } from "@/lib/supabase";
 import { getUsdRate, setUsdRate } from "@/lib/meta";
 import { parseBankCsv } from "@/lib/bank-import";
 import { FINANCE_CACHE_TAG, META_CACHE_TAG } from "@/lib/cache-tags";
+import { resolveClientId } from "@/lib/client-match";
 
 type ActionResult = { ok: boolean; error?: string };
 
@@ -54,8 +55,18 @@ export async function addClient(formData: FormData): Promise<ActionResult> {
 export async function addIncome(formData: FormData): Promise<ActionResult> {
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
+
+  const clientName = String(formData.get("client_name") || "").trim();
+  const { data: clients } = await sb.from("ob_clients").select("id, company");
+  const clientId = resolveClientId(
+    String(formData.get("client_id") || ""),
+    clientName,
+    clients ?? []
+  );
+
   const { error } = await sb.from("ob_income").insert({
-    client_name: String(formData.get("client_name") || "").trim(),
+    client_id: clientId,
+    client_name: clientName,
     project: String(formData.get("project") || "").trim(),
     amount: Number(formData.get("amount") || 0),
     currency: String(formData.get("currency") || "ILS"),
@@ -66,6 +77,7 @@ export async function addIncome(formData: FormData): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
   invalidateFinance();
   revalidatePath("/income");
+  if (clientId) revalidatePath(`/clients/${clientId}`);
   return { ok: true };
 }
 
@@ -149,8 +161,17 @@ export async function updateIncome(formData: FormData): Promise<ActionResult> {
   const sb = getSupabase();
   if (!sb) return { ok: false, error: NOT_CONFIGURED };
   const id = String(formData.get("id"));
+  const clientName = String(formData.get("client_name") || "").trim();
+  const { data: clients } = await sb.from("ob_clients").select("id, company");
+  const clientId = resolveClientId(
+    String(formData.get("client_id") || ""),
+    clientName,
+    clients ?? []
+  );
+
   const { error } = await sb.from("ob_income").update({
-    client_name: String(formData.get("client_name") || "").trim(),
+    client_id: clientId,
+    client_name: clientName,
     project: String(formData.get("project") || "").trim(),
     amount: Number(formData.get("amount") || 0),
     currency: String(formData.get("currency") || "ILS"),
@@ -161,6 +182,7 @@ export async function updateIncome(formData: FormData): Promise<ActionResult> {
   if (error) return { ok: false, error: friendlyDbError(error.message) };
   invalidateFinance();
   revalidatePath("/income");
+  if (clientId) revalidatePath(`/clients/${clientId}`);
   return { ok: true };
 }
 
