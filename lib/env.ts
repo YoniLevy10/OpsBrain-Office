@@ -32,6 +32,20 @@ export function getEnvStatus(): EnvStatus[] {
       required: false,
       hint: "CRON_SECRET — מחרוזת אקראית (לדוגמה: openssl rand -hex 32)",
     },
+    {
+      key: "GI_PLUGIN",
+      label: "סליקה — קישורי תשלום",
+      configured: Boolean(process.env.GREENINVOICE_PLUGIN_ID),
+      required: false,
+      hint: "GREENINVOICE_PLUGIN_ID — מזהה פלאגין סליקה מ-Morning",
+    },
+    {
+      key: "GI_WEBHOOK",
+      label: "Webhook תשלומים",
+      configured: Boolean(process.env.GREENINVOICE_WEBHOOK_SECRET),
+      required: false,
+      hint: "GREENINVOICE_WEBHOOK_SECRET — לאימות POST /api/webhooks/greeninvoice",
+    },
   ];
 }
 

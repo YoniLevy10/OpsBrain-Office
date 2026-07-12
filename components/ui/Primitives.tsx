@@ -25,6 +25,12 @@ const statusStyles: Record<string, string> = {
   באיחור: "bg-rose/10 text-rose",
   "לא פעיל": "bg-text-tertiary/10 text-text-tertiary",
   בוטל: "bg-text-tertiary/10 text-text-tertiary",
+  Morning: "bg-blue/10 text-blue",
+  נוצר: "bg-emerald/10 text-emerald",
+  מקומי: "bg-brass/10 text-brass",
+  הונפק: "bg-blue/10 text-blue",
+  נשלח: "bg-emerald/10 text-emerald",
+  נכשל: "bg-rose/10 text-rose",
 };
 
 export function Badge({ label }: { label: string }) {

@@ -32,7 +32,7 @@ export type FinanceBundle = {
 const CLIENT_COLS =
   "id, company, contact, email, phone, vat, revenue, outstanding, active_since, status, created_at";
 const INCOME_COLS =
-  "id, client_id, client_name, project, amount, currency, invoice_number, status, date";
+  "id, client_id, client_name, project, amount, currency, invoice_number, status, date, gi_id, gi_document_type, gi_payment_link, gi_pdf_url, source";
 const EXPENSE_COLS = "id, vendor, category, amount, currency, amount_ils, date, recurring";
 const SUB_COLS =
   "id, vendor, category, price, currency, price_ils, billing_cycle, next_charge, status";
@@ -63,6 +63,11 @@ function mapIncome(r: any): IncomeEntry {
     invoiceNumber: r.invoice_number ?? "",
     status: r.status ?? "ממתין",
     date: r.date ?? "",
+    giId: r.gi_id ?? undefined,
+    giDocumentType: r.gi_document_type ?? undefined,
+    giPaymentLink: r.gi_payment_link ?? undefined,
+    giPdfUrl: r.gi_pdf_url ?? undefined,
+    source: r.source ?? "manual",
   };
 }
 

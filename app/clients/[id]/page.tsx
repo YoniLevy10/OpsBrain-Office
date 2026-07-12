@@ -18,6 +18,8 @@ import {
 import { Mail, Phone, ArrowRight, Wallet, AlertCircle, TrendingUp } from "lucide-react";
 import { IncomeStatusSelect } from "@/components/income/IncomeStatusSelect";
 import { ClientEditButton } from "@/components/records/ClientEditButton";
+import { MorningActionsMenu } from "@/components/greeninvoice/MorningActionsMenu";
+import { MorningIncomeActions } from "@/components/greeninvoice/MorningIncomeActions";
 
 export const revalidate = 45;
 
@@ -49,7 +51,13 @@ export default async function ClientProfilePage({
         live={live}
         notifications={notifications}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <MorningActionsMenu
+              clientId={client.id}
+              clientName={client.company}
+              clientEmail={client.email}
+              outstanding={outstanding}
+            />
             <ClientEditButton client={client} />
             <Link
               href="/clients"
@@ -126,7 +134,10 @@ export default async function ClientProfilePage({
                     </div>
                     <div className="text-left shrink-0">
                       <div className="font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</div>
-                      <IncomeStatusSelect id={i.id} status={resolveIncomeStatus(i)} />
+                      <div className="flex items-center gap-1 justify-end mt-1">
+                        <IncomeStatusSelect id={i.id} status={resolveIncomeStatus(i)} />
+                        <MorningIncomeActions entry={i} clientEmail={client.email} />
+                      </div>
                     </div>
                   </div>
                 </MobileCard>
@@ -154,7 +165,10 @@ export default async function ClientProfilePage({
                       </td>
                       <td className="px-4 py-3.5 text-text-secondary">{i.date}</td>
                       <td className="px-4 py-3.5">
-                        <IncomeStatusSelect id={i.id} status={resolveIncomeStatus(i)} />
+                        <div className="flex items-center gap-1">
+                          <IncomeStatusSelect id={i.id} status={resolveIncomeStatus(i)} />
+                          <MorningIncomeActions entry={i} clientEmail={client.email} />
+                        </div>
                       </td>
                     </tr>
                   ))}

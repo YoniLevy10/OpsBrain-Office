@@ -14,6 +14,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
+import { GiActionsLog } from "@/components/greeninvoice/GiActionsLog";
 import { BankImportPanel } from "@/components/settings/BankImportPanel";
 import { UsdRateForm } from "@/components/settings/UsdRateForm";
 
@@ -122,6 +123,8 @@ export default async function SettingsPage() {
         </Card>
 
         <BankImportPanel />
+
+        <GiActionsLog />
 
         <Card className="p-5">
           <SectionHeading title="סנכרון נתונים" subtitle="משיכת לקוחות, הכנסות והוצאות מחשבונית ירוקה" />

@@ -50,6 +50,8 @@ export function EnvChecklist() {
         <p>
           <strong className="text-text-primary">אופציונלי:</strong>{" "}
           <code className="text-[11px]">GREENINVOICE_SANDBOX=true</code> רק עם מפתחות sandbox (לא production).
+          {" · "}
+          <code className="text-[11px]">GREENINVOICE_PLUGIN_ID</code> לקישורי תשלום.
         </p>
       </div>
     </Card>

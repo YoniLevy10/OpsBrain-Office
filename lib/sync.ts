@@ -6,7 +6,7 @@ import {
   searchExpenses,
   PAID_DOC_TYPES,
 } from "./greeninvoice";
-import { setLastSyncTime, getUsdRate } from "./meta";
+import { setLastSyncTime, getUsdRate, getMeta, setMeta } from "./meta";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -155,9 +155,11 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
   }
 
   try {
-    const fromDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+    const watermark = await getMeta("gi_sync_watermark");
+    const defaultFrom = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10);
+    const fromDate = watermark?.slice(0, 10) ?? defaultFrom;
 
     const usdRate = await getUsdRate();
 
@@ -193,6 +195,13 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
       (dbClients ?? []).map((c: { id: string; company: string }) => [c.company, c.id])
     );
 
+    const { data: createdRows } = await sb
+      .from("ob_income")
+      .select("gi_id")
+      .eq("source", "created")
+      .not("gi_id", "is", null);
+    const createdGiIds = new Set((createdRows ?? []).map((r: { gi_id: string }) => r.gi_id));
+
     for (const d of documents as any[]) {
       const amount = Number(d.amount ?? d.total ?? 0);
       const isCredit = Number(d.type) === 330;
@@ -207,6 +216,8 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
         invoice_number: d.number ? String(d.number) : "",
         status: mapIncomeStatus(d),
         date: d.documentDate ?? d.date ?? new Date().toISOString().slice(0, 10),
+        gi_document_type: Number(d.type) || null,
+        ...(createdGiIds.has(String(d.id)) ? {} : { source: "sync" }),
       };
       const { error } = await sb
         .from("ob_income")
@@ -237,6 +248,7 @@ export async function runGreenInvoiceSync(): Promise<SyncResult> {
     await enrichClientFinancials(sb);
     const subscriptionUpserts = await syncSubscriptionsFromExpenses(sb);
     await setLastSyncTime(new Date().toISOString());
+    await setMeta("gi_sync_watermark", new Date().toISOString());
 
     return {
       ok: true,

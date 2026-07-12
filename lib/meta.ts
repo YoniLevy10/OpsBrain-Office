@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getSupabase } from "./supabase";
 import { META_CACHE_TAG } from "./cache-tags";
 
-async function getMeta(key: string): Promise<string | null> {
+export async function getMeta(key: string): Promise<string | null> {
   const sb = getSupabase();
   if (!sb) return null;
   const { data } = await sb.from("ob_meta").select("value").eq("key", key).maybeSingle();

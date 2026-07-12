@@ -78,6 +78,33 @@ create unique index if not exists ob_clients_gi_id_key on public.ob_clients(gi_i
 create unique index if not exists ob_income_gi_id_key on public.ob_income(gi_id) where gi_id is not null;
 create unique index if not exists ob_expenses_gi_id_key on public.ob_expenses(gi_id) where gi_id is not null;
 
+-- === Morning write integration (Phase 2+) ===
+alter table public.ob_income add column if not exists gi_document_type int;
+alter table public.ob_income add column if not exists gi_payment_link text;
+alter table public.ob_income add column if not exists gi_pdf_url text;
+alter table public.ob_income add column if not exists source text default 'manual';
+
+create table if not exists public.ob_gi_actions (
+  id uuid primary key default gen_random_uuid(),
+  income_id uuid references public.ob_income(id) on delete set null,
+  client_id uuid references public.ob_clients(id) on delete set null,
+  gi_document_id text,
+  action_type text not null,
+  status text default 'pending',
+  payment_link_url text,
+  sent_to text[],
+  amount numeric,
+  currency text default 'ILS',
+  metadata jsonb default '{}',
+  error_message text,
+  created_at timestamptz default now()
+);
+
+alter table public.ob_gi_actions enable row level security;
+create policy "ob_gi_actions_all" on public.ob_gi_actions for all using (true) with check (true);
+create index if not exists ob_gi_actions_created_idx on public.ob_gi_actions(created_at desc);
+create index if not exists ob_income_source_idx on public.ob_income(source);
+
 -- App metadata (last sync time, etc.)
 create table if not exists public.ob_meta (
   key text primary key,
