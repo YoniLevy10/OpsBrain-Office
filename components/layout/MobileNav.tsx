@@ -15,6 +15,7 @@ import {
   Landmark,
   BarChart3,
   FileText,
+  Mail,
   X,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ const mainItems = [
 ];
 
 const moreItems = [
+  { href: "/email", label: "מייל", icon: Mail },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/bank", label: "בנק", icon: Landmark },

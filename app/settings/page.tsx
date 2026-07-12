@@ -2,6 +2,8 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { isGreenInvoiceConfigured, testGreenInvoiceConnection, getGreenInvoiceEnvLabel } from "@/lib/greeninvoice";
+import { isGmailConfigured } from "@/lib/gmail";
+import { getGmailConnectionStatus } from "@/lib/gmail/store";
 import { getSupabase } from "@/lib/supabase";
 import { getLastSyncTime, getUsdRate } from "@/lib/meta";
 import {
@@ -16,6 +18,7 @@ import {
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
 import { GiActionsLog } from "@/components/greeninvoice/GiActionsLog";
 import { BankImportPanel } from "@/components/settings/BankImportPanel";
+import { GmailConnectPanel } from "@/components/settings/GmailConnectPanel";
 import { UsdRateForm } from "@/components/settings/UsdRateForm";
 
 export const revalidate = 60;
@@ -64,6 +67,8 @@ function formatSyncTime(iso: string): string {
 export default async function SettingsPage() {
   const giConnected = isGreenInvoiceConfigured();
   const giTest = giConnected ? await testGreenInvoiceConnection() : { ok: false as const };
+  const gmailConfigured = isGmailConfigured();
+  const gmailStatus = gmailConfigured ? await getGmailConnectionStatus() : { connected: false, configured: false };
   const sb = getSupabase();
   const sbConnected = Boolean(sb);
   const lastSync = await getLastSyncTime();
@@ -97,6 +102,17 @@ export default async function SettingsPage() {
             connected={sbConnected}
             detail={sbConnected ? "מסד נתונים פעיל — טבלאות ob_*" : "Supabase לא מוגדר"}
           />
+          <StatusRow
+            label="Gmail — מייל החברה"
+            connected={gmailStatus.connected}
+            detail={
+              !gmailConfigured
+                ? "הוסף GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET"
+                : gmailStatus.connected
+                  ? gmailStatus.email ?? "מחובר"
+                  : "לחץ התחבר בהגדרות Gmail"
+            }
+          />
           {lastSync && (
             <div className="flex items-center gap-3 py-3 border-b border-border-soft last:border-0">
               <div className="w-8 h-8 rounded-lg bg-blue/10 flex items-center justify-center">
@@ -123,6 +139,8 @@ export default async function SettingsPage() {
         </Card>
 
         <BankImportPanel />
+
+        <GmailConnectPanel />
 
         <GiActionsLog />
 

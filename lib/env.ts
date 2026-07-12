@@ -1,4 +1,5 @@
 import { isGreenInvoiceConfigured } from "./greeninvoice";
+import { isGmailConfigured } from "./gmail";
 import { isSupabaseConfigured } from "./supabase";
 
 export interface EnvStatus {
@@ -45,6 +46,13 @@ export function getEnvStatus(): EnvStatus[] {
       configured: Boolean(process.env.GREENINVOICE_WEBHOOK_SECRET),
       required: false,
       hint: "GREENINVOICE_WEBHOOK_SECRET — לאימות POST /api/webhooks/greeninvoice",
+    },
+    {
+      key: "GMAIL",
+      label: "Gmail — מייל החברה",
+      configured: isGmailConfigured(),
+      required: false,
+      hint: "GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Google Cloud Console → Gmail API)",
     },
   ];
 }

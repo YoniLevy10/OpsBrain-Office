@@ -15,11 +15,13 @@ import {
   Landmark,
   BarChart3,
   FileText,
+  Mail,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "לוח בקרה", icon: LayoutDashboard },
   { href: "/morning", label: "חשבונית ירוקה", icon: FileText, highlight: true },
+  { href: "/email", label: "מייל", icon: Mail },
   { href: "/clients", label: "לקוחות", icon: Users },
   { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
