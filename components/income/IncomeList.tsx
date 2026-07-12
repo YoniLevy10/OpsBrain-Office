@@ -7,6 +7,7 @@ import { Tabs } from "@/components/ui/Tabs";
 import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IncomeEditButton } from "@/components/records/IncomeEditButton";
 import { IncomeStatusSelect } from "@/components/income/IncomeStatusSelect";
+import { MorningIncomeActions } from "@/components/greeninvoice/MorningIncomeActions";
 import { formatCurrency } from "@/lib/data";
 import type { Client, IncomeEntry } from "@/lib/data";
 import { resolveIncomeStatus } from "@/lib/analytics";
@@ -17,9 +18,10 @@ export function IncomeList({
   clients = [],
 }: {
   entries: IncomeEntry[];
-  clients?: Pick<Client, "id" | "company">[];
+  clients?: Pick<Client, "id" | "company" | "email">[];
 }) {
   const [filter, setFilter] = useState("all");
+  const emailByClientId = new Map(clients.map((c) => [c.id, c.email]));
 
   const resolved = entries.map((i) => ({ ...i, status: resolveIncomeStatus(i) }));
 
@@ -72,6 +74,15 @@ export function IncomeList({
             <MobileCardRow label="סכום" value={<span className="font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</span>} />
             <MobileCardRow label="תאריך" value={i.date} />
             {i.invoiceNumber && <MobileCardRow label="מס׳ חשבונית" value={<span className="font-nums">{i.invoiceNumber}</span>} />}
+            <MobileCardRow
+              label="Morning"
+              value={
+                <MorningIncomeActions
+                  entry={i}
+                  clientEmail={emailByClientId.get(i.clientId)}
+                />
+              }
+            />
           </MobileCard>
         ))}
       </MobileCardList>
@@ -87,6 +98,7 @@ export function IncomeList({
                 <th className="text-start font-medium px-5 py-3.5">סכום</th>
                 <th className="text-start font-medium px-5 py-3.5">תאריך</th>
                 <th className="text-start font-medium px-5 py-3.5">סטטוס</th>
+                <th className="text-start font-medium px-5 py-3.5">Morning</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -101,6 +113,12 @@ export function IncomeList({
                   <td className="px-5 py-4">
                     <IncomeStatusSelect id={i.id} status={i.status} />
                   </td>
+                  <td className="px-5 py-4">
+                    <MorningIncomeActions
+                      entry={i}
+                      clientEmail={emailByClientId.get(i.clientId)}
+                    />
+                  </td>
                   <td className="px-3 py-4">
                     <div className="flex items-center gap-0.5">
                       <IncomeEditButton entry={i} clients={clients} />
@@ -111,7 +129,7 @@ export function IncomeList({
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
+                  <td colSpan={8} className="px-5 py-10 text-center text-text-tertiary text-[13px]">אין רשומות בסינון זה</td>
                 </tr>
               )}
             </tbody>

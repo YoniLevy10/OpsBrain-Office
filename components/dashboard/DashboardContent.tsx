@@ -8,6 +8,7 @@ import { CategoryDonut } from "@/components/charts/CategoryDonut";
 import { ArAgingChart } from "@/components/charts/ArAgingChart";
 import { BankFlowChart } from "@/components/charts/BankFlowChart";
 import { ActivityFeed, ActivityFeedFooter } from "@/components/dashboard/ActivityFeed";
+import { PendingInvoicesWidget } from "@/components/greeninvoice/PendingInvoicesWidget";
 import {
   Wallet,
   TrendingUp,
@@ -173,6 +174,10 @@ export function DashboardContent({
             badge="פעיל"
             accent="blue"
           />
+        </div>
+
+        <div className="mt-4 sm:mt-6">
+          <PendingInvoicesWidget entries={incomeEntries} />
         </div>
       </TabPanel>
 

@@ -89,7 +89,7 @@ async function getToken(): Promise<string> {
   return token;
 }
 
-export async function giFetch(path: string, init?: RequestInit): Promise<unknown> {
+export async function giFetch<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   const token = await getToken();
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -116,13 +116,13 @@ export async function giFetch(path: string, init?: RequestInit): Promise<unknown
     if (!retry.ok) {
       throw new Error(`Morning ${path} failed: ${retry.status} ${await retry.text()}`);
     }
-    return retry.json();
+    return retry.json() as Promise<T>;
   }
 
   if (!res.ok) {
     throw new Error(`Morning ${path} failed: ${res.status} ${await res.text()}`);
   }
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 /** Quick connectivity check for settings / diagnostics */
@@ -138,7 +138,7 @@ export async function testGreenInvoiceConnection(): Promise<{ ok: boolean; error
   }
 }
 
-export const INCOME_DOC_TYPES = [300, 305, 320, 400, 405];
+export const INCOME_DOC_TYPES = [300, 305, 320, 330, 400, 405];
 export const PAID_DOC_TYPES = new Set([320, 400, 405]);
 
 const PAGE_SIZE = 100;

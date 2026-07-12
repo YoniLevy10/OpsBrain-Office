@@ -61,10 +61,20 @@ alter table public.ob_income enable row level security;
 alter table public.ob_expenses enable row level security;
 alter table public.ob_subscriptions enable row level security;
 
-create policy "ob_clients_all" on public.ob_clients for all using (true) with check (true);
-create policy "ob_income_all" on public.ob_income for all using (true) with check (true);
-create policy "ob_expenses_all" on public.ob_expenses for all using (true) with check (true);
-create policy "ob_subscriptions_all" on public.ob_subscriptions for all using (true) with check (true);
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_clients' and policyname = 'ob_clients_all') then
+    create policy "ob_clients_all" on public.ob_clients for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_income' and policyname = 'ob_income_all') then
+    create policy "ob_income_all" on public.ob_income for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_expenses' and policyname = 'ob_expenses_all') then
+    create policy "ob_expenses_all" on public.ob_expenses for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_subscriptions' and policyname = 'ob_subscriptions_all') then
+    create policy "ob_subscriptions_all" on public.ob_subscriptions for all using (true) with check (true);
+  end if;
+end $$;
 
 create index if not exists ob_income_date_idx on public.ob_income(date desc);
 create index if not exists ob_expenses_date_idx on public.ob_expenses(date desc);
@@ -78,6 +88,38 @@ create unique index if not exists ob_clients_gi_id_key on public.ob_clients(gi_i
 create unique index if not exists ob_income_gi_id_key on public.ob_income(gi_id) where gi_id is not null;
 create unique index if not exists ob_expenses_gi_id_key on public.ob_expenses(gi_id) where gi_id is not null;
 
+-- === Morning write integration (Phase 2+) ===
+alter table public.ob_income add column if not exists gi_document_type int;
+alter table public.ob_income add column if not exists gi_payment_link text;
+alter table public.ob_income add column if not exists gi_pdf_url text;
+alter table public.ob_income add column if not exists source text default 'manual';
+
+create table if not exists public.ob_gi_actions (
+  id uuid primary key default gen_random_uuid(),
+  income_id uuid references public.ob_income(id) on delete set null,
+  client_id uuid references public.ob_clients(id) on delete set null,
+  gi_document_id text,
+  action_type text not null,
+  status text default 'pending',
+  payment_link_url text,
+  sent_to text[],
+  amount numeric,
+  currency text default 'ILS',
+  metadata jsonb default '{}',
+  error_message text,
+  created_at timestamptz default now()
+);
+
+alter table public.ob_gi_actions enable row level security;
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_gi_actions' and policyname = 'ob_gi_actions_all') then
+    create policy "ob_gi_actions_all" on public.ob_gi_actions for all using (true) with check (true);
+  end if;
+end $$;
+create index if not exists ob_gi_actions_created_idx on public.ob_gi_actions(created_at desc);
+create index if not exists ob_income_source_idx on public.ob_income(source);
+
 -- App metadata (last sync time, etc.)
 create table if not exists public.ob_meta (
   key text primary key,
@@ -85,4 +127,9 @@ create table if not exists public.ob_meta (
   updated_at timestamptz default now()
 );
 alter table public.ob_meta enable row level security;
-create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_meta' and policyname = 'ob_meta_all') then
+    create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);
+  end if;
+end $$;

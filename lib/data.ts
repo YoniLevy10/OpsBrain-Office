@@ -39,6 +39,11 @@ export interface IncomeEntry {
   invoiceNumber: string;
   status: IncomeStatus;
   date: string;
+  giId?: string;
+  giDocumentType?: number;
+  giPaymentLink?: string;
+  giPdfUrl?: string;
+  source?: "manual" | "sync" | "created";
 }
 
 export interface ExpenseEntry {
