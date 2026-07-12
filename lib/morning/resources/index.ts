@@ -1,0 +1,9 @@
+export { BusinessesResource } from "./businesses";
+export { ClientsResource } from "./clients";
+export { DocumentsResource } from "./documents";
+export { ExpensesResource } from "./expenses";
+export { ItemsResource } from "./items";
+export { PartnersResource } from "./partners";
+export { PaymentsResource } from "./payments";
+export { ReferenceResource } from "./reference";
+export { SuppliersResource } from "./suppliers";

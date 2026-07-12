@@ -1,65 +1,44 @@
-import { giFetch } from "../greeninvoice";
-import { parseGiApiError } from "./errors";
+import { getMorningClient } from "../morning";
+import type { PaymentTypeCode } from "../morning/constants";
 import type {
-  GiCreateDocumentRequest,
-  GiDocumentResponse,
-  GiDownloadLinks,
-  GiPreviewResponse,
-  GiSendDocumentRequest,
-} from "./types";
+  CreateDocumentRequest,
+  DocumentResponse,
+  DownloadLinks,
+  PreviewResponse,
+  SendDocumentRequest,
+} from "../morning/types";
 
-async function giFetchSafe<T>(path: string, init?: RequestInit): Promise<T> {
-  try {
-    return await giFetch<T>(path, init);
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("failed:")) {
-      const match = err.message.match(/failed: (\d+) (.+)/);
-      if (match) {
-        throw new Error(parseGiApiError(match[2], Number(match[1])));
-      }
-    }
-    throw err;
-  }
+export async function createDocument(payload: CreateDocumentRequest): Promise<DocumentResponse> {
+  return getMorningClient().documents.create(payload);
 }
 
-export async function createDocument(payload: GiCreateDocumentRequest): Promise<GiDocumentResponse> {
-  return giFetchSafe<GiDocumentResponse>("/documents", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export async function previewDocument(payload: CreateDocumentRequest): Promise<PreviewResponse> {
+  return getMorningClient().documents.preview(payload);
 }
 
-export async function previewDocument(payload: GiCreateDocumentRequest): Promise<GiPreviewResponse> {
-  return giFetchSafe<GiPreviewResponse>("/documents/preview", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+export async function getDocument(id: string): Promise<DocumentResponse> {
+  return getMorningClient().documents.get(id);
 }
 
-export async function getDocument(id: string): Promise<GiDocumentResponse> {
-  return giFetchSafe<GiDocumentResponse>(`/documents/${id}`, { method: "GET" });
+export async function sendDocument(id: string, payload: SendDocumentRequest): Promise<unknown> {
+  return getMorningClient().documents.send(id, payload);
 }
 
-export async function sendDocument(
-  id: string,
-  payload: GiSendDocumentRequest
-): Promise<unknown> {
-  return giFetchSafe(`/documents/${id}/send`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-export async function getDocumentDownloadLinks(id: string): Promise<GiDownloadLinks> {
-  return giFetchSafe<GiDownloadLinks>(`/documents/${id}/download/links`, { method: "GET" });
+export async function getDocumentDownloadLinks(id: string): Promise<DownloadLinks> {
+  return getMorningClient().documents.getDownloadLinks(id);
 }
 
 export async function addDocumentPayment(
   id: string,
   payment: { date: string; type: number; price: number; currency: string }
 ): Promise<unknown> {
-  return giFetchSafe(`/documents/${id}/payment`, {
-    method: "POST",
-    body: JSON.stringify({ payment: [payment] }),
+  return getMorningClient().documents.addPayment(id, {
+    date: payment.date,
+    type: payment.type as PaymentTypeCode,
+    price: payment.price,
+    currency: payment.currency,
   });
 }
+
+// Re-export full documents resource for new code
+export { DocumentsResource } from "../morning/resources/documents";

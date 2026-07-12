@@ -20,7 +20,7 @@ export type SyncResult = {
 };
 
 function mapIncomeStatus(d: any): string {
-  const isPaid = PAID_DOC_TYPES.has(Number(d.type)) || d.status === 1;
+  const isPaid = PAID_DOC_TYPES.has(Number(d.type) as import("./morning/constants").DocumentTypeCode) || d.status === 1;
   if (isPaid) return "שולם";
   const docDate = d.documentDate ?? d.date;
   if (docDate) {

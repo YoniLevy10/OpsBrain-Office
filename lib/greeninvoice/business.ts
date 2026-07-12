@@ -1,16 +1,11 @@
-import { giFetch } from "../greeninvoice";
+import { getMorningClient } from "../morning";
+import type { BusinessRecord } from "../morning/types";
 
-export type GiBusiness = {
-  id?: string;
-  name?: string;
-  taxId?: string;
-  email?: string;
-  phone?: string;
-};
+export type GiBusiness = BusinessRecord;
 
 export async function getCurrentBusiness(): Promise<GiBusiness | null> {
   try {
-    return await giFetch<GiBusiness>("/businesses/me", { method: "GET" });
+    return await getMorningClient().businesses.me();
   } catch {
     return null;
   }
