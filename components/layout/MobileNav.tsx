@@ -22,12 +22,12 @@ import {
 const mainItems = [
   { href: "/", label: "בקרה", icon: LayoutDashboard },
   { href: "/clients", label: "לקוחות", icon: Users },
+  { href: "/email", label: "מייל", icon: Mail },
   { href: "/morning", label: "חשבונית", icon: FileText, featured: true },
-  { href: "/income", label: "הכנסות", icon: TrendingUp },
 ];
 
 const moreItems = [
-  { href: "/email", label: "מייל", icon: Mail },
+  { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/bank", label: "בנק", icon: Landmark },

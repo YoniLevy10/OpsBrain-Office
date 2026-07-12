@@ -20,9 +20,9 @@ import {
 
 const navItems = [
   { href: "/", label: "לוח בקרה", icon: LayoutDashboard },
-  { href: "/morning", label: "חשבונית ירוקה", icon: FileText, highlight: true },
-  { href: "/email", label: "מייל", icon: Mail },
   { href: "/clients", label: "לקוחות", icon: Users },
+  { href: "/email", label: "מייל", icon: Mail },
+  { href: "/morning", label: "חשבונית ירוקה", icon: FileText, highlight: true },
   { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
