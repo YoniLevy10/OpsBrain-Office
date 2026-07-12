@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   Settings,
   Landmark,
+  BarChart3,
   X,
 } from "lucide-react";
 
@@ -24,6 +25,7 @@ const mainItems = [
 ];
 
 const moreItems = [
+  { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/bank", label: "בנק", icon: Landmark },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
   { href: "/reports", label: "דוחות", icon: FileSpreadsheet },

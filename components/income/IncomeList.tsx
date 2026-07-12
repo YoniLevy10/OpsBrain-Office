@@ -8,11 +8,17 @@ import { DeleteButton } from "@/components/ui/DeleteButton";
 import { IncomeEditButton } from "@/components/records/IncomeEditButton";
 import { IncomeStatusSelect } from "@/components/income/IncomeStatusSelect";
 import { formatCurrency } from "@/lib/data";
-import type { IncomeEntry } from "@/lib/data";
+import type { Client, IncomeEntry } from "@/lib/data";
 import { resolveIncomeStatus } from "@/lib/analytics";
 import { TrendingUp, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
-export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
+export function IncomeList({
+  entries,
+  clients = [],
+}: {
+  entries: IncomeEntry[];
+  clients?: Pick<Client, "id" | "company">[];
+}) {
   const [filter, setFilter] = useState("all");
 
   const resolved = entries.map((i) => ({ ...i, status: resolveIncomeStatus(i) }));
@@ -58,7 +64,7 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                 {i.project && <div className="text-[12px] text-text-secondary mt-0.5 truncate">{i.project}</div>}
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <IncomeEditButton entry={i} />
+                <IncomeEditButton entry={i} clients={clients} />
                 <IncomeStatusSelect id={i.id} status={i.status} />
                 <DeleteButton table="income" id={i.id} />
               </div>
@@ -97,7 +103,7 @@ export function IncomeList({ entries }: { entries: IncomeEntry[] }) {
                   </td>
                   <td className="px-3 py-4">
                     <div className="flex items-center gap-0.5">
-                      <IncomeEditButton entry={i} />
+                      <IncomeEditButton entry={i} clients={clients} />
                       <DeleteButton table="income" id={i.id} />
                     </div>
                   </td>

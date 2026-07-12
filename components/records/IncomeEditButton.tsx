@@ -2,16 +2,23 @@
 
 import { EditRecordPanel } from "@/components/ui/EditRecordPanel";
 import { Field, SelectField } from "@/components/ui/AddRecordPanel";
+import { ClientSelectField } from "@/components/income/ClientSelectField";
 import { updateIncome } from "@/app/actions";
-import type { IncomeEntry } from "@/lib/data";
+import type { Client, IncomeEntry } from "@/lib/data";
 
 const statuses = ["שולם", "ממתין", "באיחור", "בוטל"];
 
-export function IncomeEditButton({ entry }: { entry: IncomeEntry }) {
+export function IncomeEditButton({
+  entry,
+  clients,
+}: {
+  entry: IncomeEntry;
+  clients: Pick<Client, "id" | "company">[];
+}) {
   return (
     <EditRecordPanel title="עריכת הכנסה" action={updateIncome}>
       <input type="hidden" name="id" value={entry.id} />
-      <Field label="לקוח" name="client_name" required defaultValue={entry.clientName} />
+      <ClientSelectField clients={clients} defaultCompany={entry.clientName} />
       <Field label="פרויקט" name="project" defaultValue={entry.project} />
       <div className="grid grid-cols-2 gap-3">
         <Field label="סכום" name="amount" type="number" required defaultValue={String(entry.amount)} />

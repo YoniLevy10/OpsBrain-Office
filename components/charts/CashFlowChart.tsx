@@ -19,11 +19,11 @@ interface Point {
 const CHART = {
   income: "#0D9B73",
   expense: "#DC4A62",
-  grid: "#E2E7EF",
-  tick: "#5A6578",
-  tooltipBg: "#FFFFFF",
-  tooltipBorder: "#E2E7EF",
-  tooltipLabel: "#1A2233",
+  grid: "var(--chart-grid, #E2E7EF)",
+  tick: "var(--chart-tick, #5A6578)",
+  tooltipBg: "var(--chart-tooltip-bg, #FFFFFF)",
+  tooltipBorder: "var(--chart-tooltip-border, #E2E7EF)",
+  tooltipLabel: "var(--text-primary, #1A2233)",
 };
 
 function formatYAxis(value: number): string {

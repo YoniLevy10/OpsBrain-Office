@@ -28,20 +28,27 @@ function toCsv(headers: string[], rows: (string | number)[][]): string {
   return bom + lines.join("\n");
 }
 
+function parseMonthParam(raw: string | null): string {
+  if (raw && /^\d{4}-\d{2}$/.test(raw)) return raw;
+  return getCurrentMonthKey();
+}
+
 export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get("type") ?? "summary";
+  const month = parseMonthParam(request.nextUrl.searchParams.get("month"));
   const sb = getSupabase();
   if (!sb) {
     return NextResponse.json({ error: "Supabase לא מחובר" }, { status: 500 });
   }
 
-  const month = getCurrentMonthKey();
-
   if (type === "income") {
     const { data } = await sb.from("ob_income").select("*").order("date", { ascending: false });
+    const rows = month
+      ? (data ?? []).filter((r) => String(r.date ?? "").startsWith(month))
+      : data ?? [];
     const csv = toCsv(
       ["לקוח", "פרויקט", "סכום", "מטבע", "מס׳ חשבונית", "סטטוס", "תאריך"],
-      (data ?? []).map((r) => [
+      rows.map((r) => [
         r.client_name,
         r.project,
         r.amount,
@@ -61,9 +68,12 @@ export async function GET(request: NextRequest) {
 
   if (type === "expenses") {
     const { data } = await sb.from("ob_expenses").select("*").order("date", { ascending: false });
+    const rows = month
+      ? (data ?? []).filter((r) => String(r.date ?? "").startsWith(month))
+      : data ?? [];
     const csv = toCsv(
       ["ספק", "קטגוריה", "סכום", "מטבע", "סכום ב-₪", "תאריך", "חוזר"],
-      (data ?? []).map((r) => [
+      rows.map((r) => [
         r.vendor,
         r.category,
         r.amount,
@@ -103,7 +113,6 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // summary report
   const [incomeRes, expensesRes, clientsRes, subsRes] = await Promise.all([
     sb.from("ob_income").select("*"),
     sb.from("ob_expenses").select("*"),

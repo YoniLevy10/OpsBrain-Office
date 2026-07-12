@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Search, X, Users, TrendingUp, TrendingDown, Landmark } from "lucide-react";
 import { BrainMark } from "@/components/brand/BrainMark";
 import { Modal } from "@/components/ui/Modal";
 
@@ -18,6 +18,7 @@ const typeIcons: Record<string, typeof Users> = {
   לקוח: Users,
   הכנסה: TrendingUp,
   הוצאה: TrendingDown,
+  בנק: Landmark,
 };
 
 export function GlobalSearch() {

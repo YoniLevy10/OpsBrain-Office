@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { ThemeScript } from "@/components/layout/ThemeScript";
 import { PWARegister } from "@/components/PWARegister";
 import { PullToRefresh } from "@/components/layout/PullToRefresh";
 
@@ -39,7 +40,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="he" dir="rtl" suppressHydrationWarning>
+      <head>
+        <ThemeScript />
+      </head>
       <body className="antialiased">
         <PWARegister />
         <div className="flex min-h-screen">

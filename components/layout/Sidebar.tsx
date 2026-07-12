@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/brand/BrandLogo";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import {
   LayoutDashboard,
   Users,
@@ -12,10 +13,12 @@ import {
   Settings,
   FileSpreadsheet,
   Landmark,
+  BarChart3,
 } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "לוח בקרה", icon: LayoutDashboard },
+  { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/clients", label: "לקוחות", icon: Users },
   { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
@@ -37,7 +40,7 @@ export function Sidebar() {
 
       <nav className="flex-1 px-3 space-y-0.5">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"));
           const Icon = item.icon;
           return (
             <Link
@@ -65,6 +68,7 @@ export function Sidebar() {
       </nav>
 
       <div className="px-3 pb-4">
+        <ThemeToggle className="w-full justify-center mx-1 mb-2" />
         <Link
           href="/settings"
           className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-colors ${
