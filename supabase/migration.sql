@@ -61,10 +61,20 @@ alter table public.ob_income enable row level security;
 alter table public.ob_expenses enable row level security;
 alter table public.ob_subscriptions enable row level security;
 
-create policy "ob_clients_all" on public.ob_clients for all using (true) with check (true);
-create policy "ob_income_all" on public.ob_income for all using (true) with check (true);
-create policy "ob_expenses_all" on public.ob_expenses for all using (true) with check (true);
-create policy "ob_subscriptions_all" on public.ob_subscriptions for all using (true) with check (true);
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_clients' and policyname = 'ob_clients_all') then
+    create policy "ob_clients_all" on public.ob_clients for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_income' and policyname = 'ob_income_all') then
+    create policy "ob_income_all" on public.ob_income for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_expenses' and policyname = 'ob_expenses_all') then
+    create policy "ob_expenses_all" on public.ob_expenses for all using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_subscriptions' and policyname = 'ob_subscriptions_all') then
+    create policy "ob_subscriptions_all" on public.ob_subscriptions for all using (true) with check (true);
+  end if;
+end $$;
 
 create index if not exists ob_income_date_idx on public.ob_income(date desc);
 create index if not exists ob_expenses_date_idx on public.ob_expenses(date desc);
@@ -101,7 +111,12 @@ create table if not exists public.ob_gi_actions (
 );
 
 alter table public.ob_gi_actions enable row level security;
-create policy "ob_gi_actions_all" on public.ob_gi_actions for all using (true) with check (true);
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_gi_actions' and policyname = 'ob_gi_actions_all') then
+    create policy "ob_gi_actions_all" on public.ob_gi_actions for all using (true) with check (true);
+  end if;
+end $$;
 create index if not exists ob_gi_actions_created_idx on public.ob_gi_actions(created_at desc);
 create index if not exists ob_income_source_idx on public.ob_income(source);
 
@@ -112,4 +127,9 @@ create table if not exists public.ob_meta (
   updated_at timestamptz default now()
 );
 alter table public.ob_meta enable row level security;
-create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);
+
+do $$ begin
+  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_meta' and policyname = 'ob_meta_all') then
+    create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);
+  end if;
+end $$;
