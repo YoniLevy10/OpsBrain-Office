@@ -1,4 +1,5 @@
 import { TopBar } from "@/components/layout/TopBar";
+import { SyncButton } from "@/components/ui/SyncButton";
 import { MorningHubContent } from "@/components/greeninvoice/MorningHubContent";
 import { getFinanceBundle } from "@/lib/queries";
 import { getLastSyncTime } from "@/lib/meta";
@@ -53,9 +54,10 @@ export default async function MorningPage() {
     <div>
       <TopBar
         title="חשבונית ירוקה"
-        subtitle="Morning — קבלות, חשבוניות, תשלומים וניהול"
+        subtitle="קבלות · חשבוניות · קישורי תשלום"
         live={live}
         notifications={notifications}
+        action={<SyncButton />}
       />
 
       <div className="px-4 sm:px-6 md:px-9 pb-8">

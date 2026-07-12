@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Receipt,
   FileText,
   Link2,
-  Loader2,
   Mail,
   Eye,
   Copy,
@@ -16,12 +16,30 @@ import {
   PenLine,
   Palette,
   CreditCard,
+  Wifi,
+  WifiOff,
+  Clock,
+  Settings,
+  ChevronLeft,
+  Sparkles,
+  FolderOpen,
+  History,
 } from "lucide-react";
-import { Card, KpiCard, SectionHeading, Badge } from "@/components/ui/Primitives";
-import { Tabs, TabPanel } from "@/components/ui/Tabs";
+import { Card, Badge, SectionHeading } from "@/components/ui/Primitives";
+import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/MobileCard";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { MorningClientPicker, type MorningClient } from "./MorningClientPicker";
 import { MorningIncomeActions } from "./MorningIncomeActions";
+import {
+  MorningField,
+  MorningInput,
+  MorningSelect,
+  MorningAlert,
+  MorningBtn,
+  MorningActionTile,
+  MorningEmpty,
+  MorningToggle,
+} from "./MorningUi";
 import { formatCurrency } from "@/lib/data";
 import type { IncomeEntry } from "@/lib/data";
 import { mapPaymentTypeLabel } from "@/lib/greeninvoice/errors";
@@ -35,31 +53,28 @@ const PAYMENT_TYPES: { value: GiPaymentTypeCode; label: string }[] = [
 ];
 
 const MORNING_LINKS = [
-  {
-    href: "https://app.greeninvoice.co.il",
-    label: "ממשק Morning",
-    desc: "ניהול מלא — חתימות, תבניות, סליקה",
-    icon: ExternalLink,
-  },
-  {
-    href: "https://app.greeninvoice.co.il/settings/business",
-    label: "חתימה ולוגו",
-    desc: "העלאת חתימה דיגיטלית ולוגו לעסק",
-    icon: PenLine,
-  },
-  {
-    href: "https://app.greeninvoice.co.il/settings/templates",
-    label: "תבניות מסמכים",
-    desc: "עיצוב חשבוניות וקבלות",
-    icon: Palette,
-  },
-  {
-    href: "https://app.greeninvoice.co.il/settings/plugins",
-    label: "סליקה ותשלומים",
-    desc: "הגדרת Cardcom, Isracard, Grow",
-    icon: CreditCard,
-  },
+  { href: "https://app.greeninvoice.co.il", label: "ממשק Morning", desc: "ניהול מלא", icon: ExternalLink },
+  { href: "https://app.greeninvoice.co.il/settings/business", label: "חתימה ולוגו", desc: "חתימה דיגיטלית", icon: PenLine },
+  { href: "https://app.greeninvoice.co.il/settings/templates", label: "תבניות", desc: "עיצוב מסמכים", icon: Palette },
+  { href: "https://app.greeninvoice.co.il/settings/plugins", label: "סליקה", desc: "Cardcom, Isracard", icon: CreditCard },
 ];
+
+const ACTION_LABELS: Record<string, string> = {
+  receipt: "קבלה",
+  invoice: "חשבונית",
+  payment_link: "קישור תשלום",
+  send_email: "שליחה במייל",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: "ממתין",
+  issued: "הונפק",
+  sent: "נשלח",
+  paid: "שולם",
+  failed: "נכשל",
+};
+
+type TabId = "receipt" | "invoice" | "payment" | "documents" | "manage";
 
 type Props = {
   clients: MorningClient[];
@@ -78,27 +93,32 @@ type Props = {
   }>;
 };
 
-const ACTION_LABELS: Record<string, string> = {
-  receipt: "קבלה",
-  invoice: "חשבונית",
-  payment_link: "קישור תשלום",
-  send_email: "שליחה במייל",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: "ממתין",
-  issued: "הונפק",
-  sent: "נשלח",
-  paid: "שולם",
-  failed: "נכשל",
-};
-
-function FormMessage({ error, success }: { error: string; success: string }) {
+function ClientContextPanel({
+  clients,
+  clientId,
+  clientEmail,
+  onClientChange,
+  onEmailChange,
+}: {
+  clients: MorningClient[];
+  clientId: string;
+  clientEmail: string;
+  onClientChange: (c: MorningClient | null, freeText?: string) => void;
+  onEmailChange: (email: string) => void;
+}) {
   return (
-    <>
-      {error && <p className="text-[12.5px] text-rose bg-rose/10 px-3 py-2 rounded-lg">{error}</p>}
-      {success && <p className="text-[12.5px] text-emerald bg-emerald/10 px-3 py-2 rounded-lg">{success}</p>}
-    </>
+    <div className="space-y-4 lg:sticky lg:top-28">
+      <MorningClientPicker clients={clients} value={clientId} onChange={onClientChange} />
+      <MorningField label="מייל לשליחה" hint="נדרש לשליחת מסמך במייל">
+        <MorningInput
+          type="email"
+          value={clientEmail}
+          onChange={onEmailChange}
+          placeholder="client@example.com"
+          dir="ltr"
+        />
+      </MorningField>
+    </div>
   );
 }
 
@@ -112,7 +132,7 @@ export function MorningHubContent({
   actions,
 }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState("receipt");
+  const [tab, setTab] = useState<TabId>("receipt");
 
   const morningIncome = income.filter((i) => i.giId || i.source === "created" || i.source === "sync");
   const pending = income.filter((i) => i.status === "ממתין" || i.status === "באיחור");
@@ -135,7 +155,6 @@ export function MorningHubContent({
     }
   }
 
-  // Receipt form state
   const [rAmount, setRAmount] = useState("");
   const [rDesc, setRDesc] = useState("");
   const [rProject, setRProject] = useState("");
@@ -145,7 +164,6 @@ export function MorningHubContent({
   const [rError, setRError] = useState("");
   const [rSuccess, setRSuccess] = useState("");
 
-  // Invoice form state
   const [iAmount, setIAmount] = useState("");
   const [iDesc, setIDesc] = useState("");
   const [iProject, setIProject] = useState("");
@@ -154,7 +172,6 @@ export function MorningHubContent({
   const [iError, setIError] = useState("");
   const [iSuccess, setISuccess] = useState("");
 
-  // Payment link form state
   const [pAmount, setPAmount] = useState("");
   const [pDesc, setPDesc] = useState("");
   const [pProject, setPProject] = useState("");
@@ -193,7 +210,7 @@ export function MorningHubContent({
         if (w) w.document.write(`<iframe width="100%" height="100%" src="data:application/pdf;base64,${data.previewBase64}"></iframe>`);
         return;
       }
-      setRSuccess(`קבלה ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה" : ""}`);
+      setRSuccess(`קבלה ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה במייל" : ""}`);
       router.refresh();
     } catch {
       setRError("שגיאת רשת");
@@ -226,7 +243,7 @@ export function MorningHubContent({
         setIError(data.error ?? "שגיאה");
         return;
       }
-      setISuccess(`חשבונית ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה" : ""}`);
+      setISuccess(`חשבונית ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה במייל" : ""}`);
       router.refresh();
     } catch {
       setIError("שגיאת רשת");
@@ -266,245 +283,366 @@ export function MorningHubContent({
     }
   }
 
-  const tabs = [
-    { id: "receipt", label: "קבלה", icon: Receipt },
-    { id: "invoice", label: "חשבונית מס", icon: FileText },
-    { id: "payment", label: "קישור תשלום", icon: Link2 },
-    { id: "documents", label: "מסמכים", count: morningIncome.length },
-    { id: "manage", label: "ניהול" },
-  ];
+  const isFormTab = tab === "receipt" || tab === "invoice" || tab === "payment";
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard
-          label="חיבור API"
-          value={connected ? "פעיל" : "לא מחובר"}
+      {/* Hero */}
+      <Card className="overflow-hidden border-emerald/15">
+        <div className="relative p-5 sm:p-6 bg-gradient-to-l from-emerald/[0.08] via-transparent to-blue/[0.04]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald/15 border border-emerald/20 flex items-center justify-center shrink-0">
+                <Sparkles className="w-6 h-6 text-emerald" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-[17px] sm:text-[18px] font-bold">מרכז חשבונית ירוקה</h2>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                      connected ? "bg-emerald/10 text-emerald" : "bg-rose/10 text-rose"
+                    }`}
+                  >
+                    {connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                    {connected ? "מחובר" : "לא מחובר"}
+                  </span>
+                  <Badge label={envLabel.split(" ")[0]} />
+                </div>
+                <p className="text-[13px] text-text-secondary mt-1">
+                  {businessName ? (
+                    <>
+                      <span className="font-medium text-text-primary">{businessName}</span>
+                      {lastSync && (
+                        <span className="inline-flex items-center gap-1 mr-2 text-text-tertiary">
+                          <Clock className="w-3 h-3" />
+                          סנכרון: {lastSync}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "הנפקת מסמכים, קישורי תשלום וסנכרון — הכל ממקום אחד"
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <SyncButton />
+              <Link
+                href="/settings"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border text-[12.5px] font-medium text-text-secondary hover:bg-surface-hover transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                הגדרות
+              </Link>
+            </div>
+          </div>
+
+          {!connected && (
+            <div className="mt-4">
+              <MorningAlert type="error">
+              חסרים מפתחות API — הוסף GREENINVOICE_API_ID ו-SECRET ב-Vercel.{" "}
+              <Link href="/settings" className="underline font-medium">למדריך הגדרה</Link>
+              </MorningAlert>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 border-t border-border-soft divide-x divide-border-soft rtl:divide-x-reverse">
+          {[
+            { label: "מסמכים", value: morningIncome.length },
+            { label: "ממתין", value: pending.length },
+            { label: "פעולות", value: actions.length },
+          ].map((s) => (
+            <div key={s.label} className="px-4 py-3 text-center">
+              <div className="font-nums text-[20px] font-bold">{s.value}</div>
+              <div className="text-[11px] text-text-tertiary">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <MorningActionTile
           icon={Receipt}
-          accent={connected ? "emerald" : "rose"}
+          title="קבלה"
+          desc="תשלום שהתקבל — מסמך 400"
+          active={tab === "receipt"}
+          onClick={() => setTab("receipt")}
+          accent="emerald"
         />
-        <KpiCard label="סביבה" value={envLabel} icon={FileText} accent="blue" />
-        <KpiCard label="מסמכי Morning" value={String(morningIncome.length)} icon={FileText} accent="brass" />
-        <KpiCard label="ממתין לתשלום" value={String(pending.length)} icon={Link2} accent="rose" />
+        <MorningActionTile
+          icon={FileText}
+          title="חשבונית מס"
+          desc="חיוב לפני תשלום — 305"
+          active={tab === "invoice"}
+          onClick={() => setTab("invoice")}
+          accent="blue"
+        />
+        <MorningActionTile
+          icon={Link2}
+          title="קישור תשלום"
+          desc="סליקה מקוונת ללקוח"
+          active={tab === "payment"}
+          onClick={() => setTab("payment")}
+          accent="brass"
+        />
       </div>
 
-      {!connected && (
-        <Card className="p-4 border-rose/20 bg-rose/5">
-          <p className="text-[13.5px] text-rose">
-            חשבונית ירוקה לא מחוברת. הוסף <code className="text-[12px]">GREENINVOICE_API_ID</code> ו-{" "}
-            <code className="text-[12px]">GREENINVOICE_API_SECRET</code> ב-Vercel → הגדרות.
-          </p>
-        </Card>
-      )}
+      <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+        {[
+          { id: "documents" as const, label: "מסמכים", icon: FolderOpen, count: morningIncome.length },
+          { id: "manage" as const, label: "ניהול", icon: History },
+        ].map(({ id, label, icon: Icon, count }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setTab(id)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12.5px] font-semibold whitespace-nowrap transition-colors ${
+              tab === id
+                ? "bg-surface border border-border text-text-primary shadow-sm"
+                : "text-text-tertiary hover:text-text-secondary"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+            {count != null && count > 0 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-emerald/10 text-emerald text-[10px]">{count}</span>
+            )}
+          </button>
+        ))}
+      </div>
 
-      {businessName && (
-        <p className="text-[13px] text-text-secondary">
-          עסק מחובר: <span className="font-semibold text-text-primary">{businessName}</span>
-          {lastSync && <span className="mr-3"> · סנכרון אחרון: {lastSync}</span>}
-        </p>
-      )}
-
-      <Tabs
-        variant="pills"
-        tabs={tabs.map(({ id, label, count }) => ({ id, label, count }))}
-        active={tab}
-        onChange={setTab}
-      />
-
-      <TabPanel active={tab} id="receipt">
-        <Card className="p-5 max-w-xl">
-          <SectionHeading title="הנפקת קבלה" subtitle="מסמך 400 — תשלום שכבר התקבל" />
-          <div className="mt-4 space-y-3">
-            <MorningClientPicker clients={clients} value={clientId} onChange={onClientChange} />
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">מייל לקוח</span>
-              <input
-                type="email"
-                value={clientEmail}
-                onChange={(e) => setClientEmail(e.target.value)}
-                className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50"
-                dir="ltr"
+      {/* Receipt form */}
+      {tab === "receipt" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,300px)_1fr] gap-5">
+          <ClientContextPanel
+            clients={clients}
+            clientId={clientId}
+            clientEmail={clientEmail}
+            onClientChange={onClientChange}
+            onEmailChange={setClientEmail}
+          />
+          <Card className="p-5 sm:p-6">
+            <SectionHeading title="הנפקת קבלה" subtitle="מסמך 400 · תאריך תשלום: היום" />
+            <div className="space-y-4 mt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <MorningField label="סכום (₪)">
+                  <MorningInput type="number" value={rAmount} onChange={setRAmount} placeholder="0" />
+                </MorningField>
+                <MorningField label="סוג תשלום" hint={mapPaymentTypeLabel(rPaymentType)}>
+                  <MorningSelect value={rPaymentType} onChange={(v) => setRPaymentType(Number(v) as GiPaymentTypeCode)}>
+                    {PAYMENT_TYPES.map((p) => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
+                  </MorningSelect>
+                </MorningField>
+              </div>
+              <MorningField label="תיאור (מופיע במסמך)">
+                <MorningInput value={rDesc} onChange={setRDesc} placeholder="לדוגמה: מנוי חודשי" required />
+              </MorningField>
+              <MorningField label="פרויקט (אופציונלי)">
+                <MorningInput value={rProject} onChange={setRProject} placeholder="שם פרויקט פנימי" />
+              </MorningField>
+              <MorningToggle
+                checked={rSendEmail}
+                onChange={setRSendEmail}
+                label="שלח קבלה במייל לאחר הנפקה"
+                disabled={!clientEmail}
+                icon={Mail}
               />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-[12px] text-text-secondary font-medium">סכום (₪)</span>
-                <input type="number" value={rAmount} onChange={(e) => setRAmount(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-              </label>
-              <label className="block">
-                <span className="text-[12px] text-text-secondary font-medium">סוג תשלום</span>
-                <select value={rPaymentType} onChange={(e) => setRPaymentType(Number(e.target.value) as GiPaymentTypeCode)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50">
-                  {PAYMENT_TYPES.map((p) => (
-                    <option key={p.value} value={p.value}>{p.label}</option>
-                  ))}
-                </select>
-              </label>
+              {rError && <MorningAlert type="error">{rError}</MorningAlert>}
+              {rSuccess && <MorningAlert type="success">{rSuccess}</MorningAlert>}
+              <div className="flex flex-wrap gap-2 pt-2">
+                <MorningBtn variant="secondary" icon={Eye} onClick={() => submitReceipt(true)} disabled={rLoading || !rAmount || !rDesc}>
+                  תצוגה מקדימה
+                </MorningBtn>
+                <MorningBtn icon={Receipt} onClick={() => submitReceipt(false)} loading={rLoading} disabled={!rAmount || !rDesc || !connected}>
+                  הנפק קבלה
+                </MorningBtn>
+              </div>
             </div>
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">תיאור</span>
-              <input value={rDesc} onChange={(e) => setRDesc(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-            </label>
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">פרויקט</span>
-              <input value={rProject} onChange={(e) => setRProject(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-            </label>
-            <label className="flex items-center gap-2 text-[13px]">
-              <input type="checkbox" checked={rSendEmail} onChange={(e) => setRSendEmail(e.target.checked)} disabled={!clientEmail} />
-              <Mail className="w-3.5 h-3.5" /> שלח במייל לאחר הנפקה
-            </label>
-            <FormMessage error={rError} success={rSuccess} />
-            <div className="flex gap-2 pt-1">
-              <button type="button" onClick={() => submitReceipt(true)} disabled={rLoading || !rAmount || !rDesc} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-[13px] hover:bg-surface-hover disabled:opacity-50">
-                <Eye className="w-4 h-4" /> תצוגה מקדימה
-              </button>
-              <button type="button" onClick={() => submitReceipt(false)} disabled={rLoading || !rAmount || !rDesc || !connected} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald text-white text-[13px] font-semibold disabled:opacity-50">
-                {rLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Receipt className="w-4 h-4" />}
-                הנפק קבלה
-              </button>
+          </Card>
+        </div>
+      )}
+
+      {/* Invoice form */}
+      {tab === "invoice" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,300px)_1fr] gap-5">
+          <ClientContextPanel clients={clients} clientId={clientId} clientEmail={clientEmail} onClientChange={onClientChange} onEmailChange={setClientEmail} />
+          <Card className="p-5 sm:p-6">
+            <SectionHeading title="הנפקת חשבונית מס" subtitle="מסמך 305 · לפני קבלת תשלום" />
+            <div className="space-y-4 mt-2">
+              <MorningField label="סכום (₪)">
+                <MorningInput type="number" value={iAmount} onChange={setIAmount} placeholder="0" />
+              </MorningField>
+              <MorningField label="תיאור">
+                <MorningInput value={iDesc} onChange={setIDesc} placeholder="תיאור החיוב" />
+              </MorningField>
+              <MorningField label="פרויקט">
+                <MorningInput value={iProject} onChange={setIProject} placeholder="אופציונלי" />
+              </MorningField>
+              <MorningToggle checked={iSendEmail} onChange={setISendEmail} label="שלח חשבונית במייל" disabled={!clientEmail} icon={Mail} />
+              {iError && <MorningAlert type="error">{iError}</MorningAlert>}
+              {iSuccess && <MorningAlert type="success">{iSuccess}</MorningAlert>}
+              <MorningBtn icon={FileText} onClick={submitInvoice} loading={iLoading} disabled={!iAmount || !iDesc || !connected} className="w-full sm:w-auto">
+                הנפק חשבונית
+              </MorningBtn>
             </div>
-            <p className="text-[11px] text-text-tertiary">{mapPaymentTypeLabel(rPaymentType)} · תאריך תשלום: היום</p>
-          </div>
-        </Card>
-      </TabPanel>
+          </Card>
+        </div>
+      )}
 
-      <TabPanel active={tab} id="invoice">
-        <Card className="p-5 max-w-xl">
-          <SectionHeading title="הנפקת חשבונית מס" subtitle="מסמך 305 — לפני תשלום" />
-          <div className="mt-4 space-y-3">
-            <MorningClientPicker clients={clients} value={clientId} onChange={onClientChange} />
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">מייל לקוח</span>
-              <input type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" dir="ltr" />
-            </label>
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">סכום (₪)</span>
-              <input type="number" value={iAmount} onChange={(e) => setIAmount(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-            </label>
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">תיאור</span>
-              <input value={iDesc} onChange={(e) => setIDesc(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-            </label>
-            <label className="block">
-              <span className="text-[12px] text-text-secondary font-medium">פרויקט</span>
-              <input value={iProject} onChange={(e) => setIProject(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-            </label>
-            <label className="flex items-center gap-2 text-[13px]">
-              <input type="checkbox" checked={iSendEmail} onChange={(e) => setISendEmail(e.target.checked)} disabled={!clientEmail} />
-              <Mail className="w-3.5 h-3.5" /> שלח במייל לאחר הנפקה
-            </label>
-            <FormMessage error={iError} success={iSuccess} />
-            <button type="button" onClick={submitInvoice} disabled={iLoading || !iAmount || !iDesc || !connected} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald text-white text-[13px] font-semibold disabled:opacity-50">
-              {iLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-              הנפק חשבונית
-            </button>
-          </div>
-        </Card>
-      </TabPanel>
-
-      <TabPanel active={tab} id="payment">
-        <Card className="p-5 max-w-xl">
-          <SectionHeading title="קישור תשלום מקוון" subtitle="יוצר חשבונית + דף סליקה ללקוח" />
-          <div className="mt-4 space-y-3">
+      {/* Payment link */}
+      {tab === "payment" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,300px)_1fr] gap-5">
+          <ClientContextPanel clients={clients} clientId={clientId} clientEmail={clientEmail} onClientChange={onClientChange} onEmailChange={setClientEmail} />
+          <Card className="p-5 sm:p-6">
+            <SectionHeading title="קישור תשלום מקוון" subtitle="יוצר חשבונית + דף סליקה" />
             {!pUrl ? (
-              <>
-                <MorningClientPicker clients={clients} value={clientId} onChange={onClientChange} />
-                <label className="block">
-                  <span className="text-[12px] text-text-secondary font-medium">סכום (₪)</span>
-                  <input type="number" value={pAmount} onChange={(e) => setPAmount(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-                </label>
-                <label className="block">
-                  <span className="text-[12px] text-text-secondary font-medium">תיאור</span>
-                  <input value={pDesc} onChange={(e) => setPDesc(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-                </label>
-                <label className="block">
-                  <span className="text-[12px] text-text-secondary font-medium">פרויקט</span>
-                  <input value={pProject} onChange={(e) => setPProject(e.target.value)} className="mt-1 w-full bg-bg border border-border rounded-lg px-3 py-2 text-[13.5px] outline-none focus:border-emerald/50" />
-                </label>
-                {pError && <p className="text-[12.5px] text-rose bg-rose/10 px-3 py-2 rounded-lg">{pError}</p>}
-                <button type="button" onClick={submitPaymentLink} disabled={pLoading || !pAmount || !pDesc || !connected} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald text-white text-[13px] font-semibold disabled:opacity-50 w-full justify-center">
-                  {pLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
+              <div className="space-y-4 mt-2">
+                <MorningAlert type="info">נדרשת סליקה פעילה ב-Morning + GREENINVOICE_PLUGIN_ID</MorningAlert>
+                <MorningField label="סכום (₪)">
+                  <MorningInput type="number" value={pAmount} onChange={setPAmount} />
+                </MorningField>
+                <MorningField label="תיאור">
+                  <MorningInput value={pDesc} onChange={setPDesc} placeholder="מה הלקוח משלם?" />
+                </MorningField>
+                <MorningField label="פרויקט">
+                  <MorningInput value={pProject} onChange={setPProject} />
+                </MorningField>
+                {pError && <MorningAlert type="error">{pError}</MorningAlert>}
+                <MorningBtn icon={Link2} onClick={submitPaymentLink} loading={pLoading} disabled={!pAmount || !pDesc || !connected} className="w-full">
                   צור קישור תשלום
-                </button>
-                <p className="text-[11px] text-text-tertiary">נדרשת סליקה פעילה ב-Morning + GREENINVOICE_PLUGIN_ID</p>
-              </>
+                </MorningBtn>
+              </div>
             ) : (
-              <div className="space-y-3">
-                <p className="text-emerald font-medium text-[13.5px]">הקישור נוצר בהצלחה</p>
-                <div className="bg-bg border border-border rounded-lg p-3 text-[12px] break-all font-mono" dir="ltr">{pUrl}</div>
+              <div className="mt-4 space-y-4">
+                <div className="rounded-2xl border border-emerald/25 bg-emerald/[0.06] p-5 text-center">
+                  <div className="w-12 h-12 rounded-full bg-emerald/15 flex items-center justify-center mx-auto mb-3">
+                    <Check className="w-6 h-6 text-emerald" />
+                  </div>
+                  <p className="font-bold text-[15px]">הקישור מוכן לשליחה</p>
+                  <p className="text-[12.5px] text-text-secondary mt-1">שתף עם הלקוח לתשלום מאובטח</p>
+                </div>
+                <div className="bg-bg border border-border rounded-xl p-4 text-[12px] break-all font-mono leading-relaxed" dir="ltr">{pUrl}</div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={async () => { await navigator.clipboard.writeText(pUrl); setPCopied(true); setTimeout(() => setPCopied(false), 2000); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border text-[13px]">
-                    {pCopied ? <Check className="w-4 h-4 text-emerald" /> : <Copy className="w-4 h-4" />}
-                    {pCopied ? "הועתק" : "העתק"}
-                  </button>
-                  <a href={`https://wa.me/?text=${encodeURIComponent(`קישור לתשלום: ${pUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald/10 text-emerald text-[13px] font-medium">
-                    <MessageCircle className="w-4 h-4" /> WhatsApp
+                  <MorningBtn
+                    variant="secondary"
+                    icon={pCopied ? Check : Copy}
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(pUrl);
+                      setPCopied(true);
+                      setTimeout(() => setPCopied(false), 2000);
+                    }}
+                  >
+                    {pCopied ? "הועתק!" : "העתק קישור"}
+                  </MorningBtn>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`שלום, מצורף קישור לתשלום:\n${pUrl}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#25D366]/10 text-[#128C7E] text-[13px] font-semibold hover:bg-[#25D366]/15 transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
                   </a>
-                  <button type="button" onClick={() => setPUrl("")} className="text-[13px] text-text-secondary hover:text-emerald">+ קישור חדש</button>
+                  <MorningBtn variant="ghost" onClick={() => setPUrl("")}>קישור חדש</MorningBtn>
                 </div>
               </div>
             )}
-          </div>
-        </Card>
-      </TabPanel>
+          </Card>
+        </div>
+      )}
 
-      <TabPanel active={tab} id="documents">
+      {/* Documents */}
+      {tab === "documents" && (
         <Card className="overflow-hidden">
-          <div className="p-5 border-b border-border-soft">
-            <SectionHeading title="מסמכי Morning" subtitle="מסונכרנים ונוצרו מהמערכת" />
+          <div className="p-5 border-b border-border-soft flex items-center justify-between gap-3">
+            <SectionHeading title="מסמכי Morning" subtitle={`${morningIncome.length} רשומות`} />
           </div>
           {morningIncome.length === 0 ? (
-            <p className="p-8 text-center text-text-tertiary text-[13px]">אין מסמכים עדיין — הנפק קבלה או חשבונית בלשונית הפעולות</p>
+            <MorningEmpty
+              icon={FolderOpen}
+              title="אין מסמכים עדיין"
+              desc="הנפק קבלה או חשבונית בלשוניות למעלה — המסמכים יופיעו כאן אוטומטית"
+              action={
+                <MorningBtn icon={Receipt} onClick={() => setTab("receipt")}>
+                  הנפק קבלה ראשונה
+                </MorningBtn>
+              }
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13.5px]">
-                <thead>
-                  <tr className="border-b border-border-soft text-text-tertiary text-[12px]">
-                    <th className="text-start font-medium px-5 py-3">לקוח</th>
-                    <th className="text-start font-medium px-5 py-3">מס׳</th>
-                    <th className="text-start font-medium px-5 py-3">סכום</th>
-                    <th className="text-start font-medium px-5 py-3">סטטוס</th>
-                    <th className="text-start font-medium px-5 py-3">פעולות</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {morningIncome.slice(0, 30).map((i) => (
-                    <tr key={i.id} className="border-b border-border-soft last:border-0 hover:bg-surface-hover/60">
-                      <td className="px-5 py-3.5 font-medium">{i.clientName}</td>
-                      <td className="px-5 py-3.5 font-mono text-[12px]">{i.invoiceNumber || "—"}</td>
-                      <td className="px-5 py-3.5 font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</td>
-                      <td className="px-5 py-3.5"><Badge label={i.status} /></td>
-                      <td className="px-5 py-3.5">
-                        <MorningIncomeActions entry={i} clientEmail={emailByClient.get(i.clientId)} />
-                      </td>
+            <>
+              <MobileCardList isEmpty={false} emptyMessage="">
+                {morningIncome.slice(0, 20).map((i) => (
+                  <MobileCard key={i.id}>
+                    <div className="flex justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-[14px] truncate">{i.clientName}</div>
+                        <div className="text-[12px] text-text-tertiary">{i.invoiceNumber || i.project || "—"}</div>
+                      </div>
+                      <Badge label={i.status} />
+                    </div>
+                    <MobileCardRow label="סכום" value={<span className="font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</span>} />
+                    <MobileCardRow label="פעולות" value={<MorningIncomeActions entry={i} clientEmail={emailByClient.get(i.clientId)} compact />} />
+                  </MobileCard>
+                ))}
+              </MobileCardList>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-[13.5px]">
+                  <thead>
+                    <tr className="border-b border-border-soft text-text-tertiary text-[12px]">
+                      <th className="text-start font-medium px-5 py-3">לקוח</th>
+                      <th className="text-start font-medium px-5 py-3">מס׳ / פרויקט</th>
+                      <th className="text-start font-medium px-5 py-3">סכום</th>
+                      <th className="text-start font-medium px-5 py-3">תאריך</th>
+                      <th className="text-start font-medium px-5 py-3">סטטוס</th>
+                      <th className="text-start font-medium px-5 py-3">פעולות</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {morningIncome.slice(0, 30).map((i) => (
+                      <tr key={i.id} className="border-b border-border-soft last:border-0 hover:bg-surface-hover/50 transition-colors">
+                        <td className="px-5 py-3.5 font-medium">{i.clientName}</td>
+                        <td className="px-5 py-3.5 text-text-secondary">{i.invoiceNumber || i.project || "—"}</td>
+                        <td className="px-5 py-3.5 font-nums font-semibold">{formatCurrency(i.amount, i.currency)}</td>
+                        <td className="px-5 py-3.5 text-text-tertiary text-[12px]">{i.date}</td>
+                        <td className="px-5 py-3.5"><Badge label={i.status} /></td>
+                        <td className="px-5 py-3.5">
+                          <MorningIncomeActions entry={i} clientEmail={emailByClient.get(i.clientId)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
-      </TabPanel>
+      )}
 
-      <TabPanel active={tab} id="manage">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-5">
-            <SectionHeading title="סנכרון וחיבור" subtitle="משיכת נתונים מ-Morning" />
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-text-secondary">סטטוס API</span>
+      {/* Manage */}
+      {tab === "manage" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <Card className="p-5 sm:p-6">
+            <SectionHeading title="סנכרון" subtitle="משיכת נתונים מ-Morning" />
+            <div className="mt-4 space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-bg border border-border-soft">
+                <span className="text-[13px] text-text-secondary">סטטוס API</span>
                 <Badge label={connected ? "מחובר" : "לא מחובר"} />
               </div>
-              <div className="flex items-center justify-between text-[13px]">
-                <span className="text-text-secondary">סביבה</span>
-                <span className="font-medium">{envLabel}</span>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-bg border border-border-soft">
+                <span className="text-[13px] text-text-secondary">סביבה</span>
+                <span className="text-[13px] font-semibold">{envLabel}</span>
               </div>
               <SyncButton />
             </div>
           </Card>
 
-          <Card className="p-5">
-            <SectionHeading title="חתימה, תבניות וסליקה" subtitle="מנוהלים בממשק Morning" />
-            <div className="mt-3 space-y-2">
+          <Card className="p-5 sm:p-6">
+            <SectionHeading title="חתימה, תבניות וסליקה" subtitle="ניהול ב-Morning" />
+            <div className="mt-3 grid gap-2">
               {MORNING_LINKS.map((link) => {
                 const Icon = link.icon;
                 return (
@@ -513,13 +651,16 @@ export function MorningHubContent({
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-start gap-3 p-3 rounded-xl border border-border-soft hover:bg-surface-hover transition-colors"
+                    className="group flex items-center gap-3 p-3.5 rounded-xl border border-border-soft hover:border-emerald/25 hover:bg-emerald/[0.03] transition-all"
                   >
-                    <Icon className="w-4 h-4 text-emerald shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-[13.5px] font-semibold">{link.label}</div>
-                      <div className="text-[12px] text-text-tertiary">{link.desc}</div>
+                    <div className="w-9 h-9 rounded-lg bg-emerald/10 flex items-center justify-center shrink-0">
+                      <Icon className="w-4 h-4 text-emerald" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13.5px] font-semibold">{link.label}</div>
+                      <div className="text-[11.5px] text-text-tertiary">{link.desc}</div>
+                    </div>
+                    <ChevronLeft className="w-4 h-4 text-text-tertiary group-hover:text-emerald transition-colors" />
                   </a>
                 );
               })}
@@ -527,19 +668,23 @@ export function MorningHubContent({
           </Card>
 
           {actions.length > 0 && (
-            <Card className="p-5 md:col-span-2">
-              <SectionHeading title="יומן פעולות" subtitle="30 פעולות אחרונות" />
-              <div className="mt-3 space-y-2">
+            <Card className="p-5 sm:p-6 lg:col-span-2">
+              <SectionHeading title="יומן פעולות" subtitle="היסטוריית פעולות מהמערכת" />
+              <div className="mt-3 divide-y divide-border-soft">
                 {actions.map((a) => (
-                  <div key={a.id} className="flex items-center justify-between py-2 border-b border-border-soft last:border-0 text-[13px]">
-                    <div>
-                      <span className="font-medium">{ACTION_LABELS[a.action_type] ?? a.action_type}</span>
-                      {a.amount != null && <span className="text-text-secondary mr-2 font-nums">₪{Number(a.amount).toLocaleString("he-IL")}</span>}
-                      {a.error_message && <div className="text-[11px] text-rose">{a.error_message}</div>}
+                  <div key={a.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[13.5px] font-semibold">{ACTION_LABELS[a.action_type] ?? a.action_type}</span>
+                        {a.amount != null && (
+                          <span className="font-nums text-[13px] text-text-secondary">₪{Number(a.amount).toLocaleString("he-IL")}</span>
+                        )}
+                      </div>
+                      {a.error_message && <p className="text-[11px] text-rose mt-0.5 truncate">{a.error_message}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Badge label={STATUS_LABELS[a.status] ?? a.status} />
-                      <span className="text-[11px] text-text-tertiary">
+                      <span className="text-[11px] text-text-tertiary whitespace-nowrap">
                         {new Date(a.created_at).toLocaleString("he-IL", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </span>
                     </div>
@@ -549,7 +694,13 @@ export function MorningHubContent({
             </Card>
           )}
         </div>
-      </TabPanel>
+      )}
+
+      {isFormTab && !connected && (
+        <p className="text-center text-[12px] text-text-tertiary pb-2">
+          חיבור API נדרש להנפקת מסמכים · <Link href="/settings" className="text-emerald hover:underline">הגדרות חיבור</Link>
+        </p>
+      )}
     </div>
   );
 }
