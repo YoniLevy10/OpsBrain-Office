@@ -133,12 +133,13 @@ export function MorningActionTile({
   desc: string;
   active: boolean;
   onClick: () => void;
-  accent: "emerald" | "blue" | "brass";
+  accent: "emerald" | "blue" | "brass" | "rose";
 }) {
   const accents = {
     emerald: { ring: "ring-emerald/40", bg: "bg-emerald/10", text: "text-emerald" },
     blue: { ring: "ring-blue/40", bg: "bg-blue/10", text: "text-blue" },
     brass: { ring: "ring-brass/40", bg: "bg-brass/10", text: "text-brass" },
+    rose: { ring: "ring-rose/40", bg: "bg-rose/10", text: "text-rose" },
   };
   const a = accents[accent];
   return (

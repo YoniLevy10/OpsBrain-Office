@@ -1,6 +1,8 @@
 // Morning (חשבונית ירוקה) API client — OAuth 2.0 + pagination.
 // Docs: https://developers.morning.co/api
 
+import { parseGiApiError } from "./greeninvoice/errors";
+
 const SANDBOX = process.env.GREENINVOICE_SANDBOX === "true";
 
 const API_BASE = SANDBOX
@@ -114,13 +116,15 @@ export async function giFetch<T = unknown>(path: string, init?: RequestInit): Pr
       cache: "no-store",
     });
     if (!retry.ok) {
-      throw new Error(`Morning ${path} failed: ${retry.status} ${await retry.text()}`);
+      const body = await retry.text();
+      throw new Error(parseGiApiError(body, retry.status));
     }
     return retry.json() as Promise<T>;
   }
 
   if (!res.ok) {
-    throw new Error(`Morning ${path} failed: ${res.status} ${await res.text()}`);
+    const body = await res.text();
+    throw new Error(parseGiApiError(body, res.status));
   }
   return res.json() as Promise<T>;
 }

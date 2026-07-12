@@ -2,7 +2,15 @@ export type GiDocumentType = 10 | 305 | 320 | 330 | 400 | 405;
 
 export type GiPaymentTypeCode = 0 | 1 | 2 | 3 | 4 | 5 | 10 | 11;
 
-export type GiActionType = "receipt" | "invoice" | "payment_link" | "send_email" | "credit_note";
+export type GiActionType =
+  | "receipt"
+  | "invoice"
+  | "invoice_receipt"
+  | "quote"
+  | "credit"
+  | "payment_link"
+  | "send_email"
+  | "credit_note";
 
 export type GiActionStatus = "pending" | "issued" | "sent" | "paid" | "failed";
 
@@ -41,6 +49,7 @@ export interface GiCreateDocumentRequest {
   currency: "ILS" | "USD";
   vatType: 0 | 1 | 2;
   date?: string;
+  signed?: boolean;
   client: GiClientPayload;
   income: GiIncomeLine[];
   payment?: GiPaymentLine[];

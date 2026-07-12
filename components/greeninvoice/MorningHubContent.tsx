@@ -43,6 +43,7 @@ import {
 import { formatCurrency } from "@/lib/data";
 import type { IncomeEntry } from "@/lib/data";
 import { mapPaymentTypeLabel } from "@/lib/greeninvoice/errors";
+import { DOCUMENT_CATALOG, getCatalogItem, type DocumentKind, type IssuableDocumentKind } from "@/lib/greeninvoice/catalog";
 import type { GiPaymentTypeCode } from "@/lib/greeninvoice/types";
 
 const PAYMENT_TYPES: { value: GiPaymentTypeCode; label: string }[] = [
@@ -62,8 +63,20 @@ const MORNING_LINKS = [
 const ACTION_LABELS: Record<string, string> = {
   receipt: "קבלה",
   invoice: "חשבונית",
+  invoice_receipt: "חשבונית+קבלה",
+  quote: "הצעת מחיר",
+  credit: "זיכוי",
   payment_link: "קישור תשלום",
   send_email: "שליחה במייל",
+};
+
+const DOC_ICONS: Record<DocumentKind, typeof Receipt> = {
+  receipt: Receipt,
+  invoice: FileText,
+  invoice_receipt: FileText,
+  quote: FileText,
+  credit: FileText,
+  payment_link: Link2,
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -74,7 +87,7 @@ const STATUS_LABELS: Record<string, string> = {
   failed: "נכשל",
 };
 
-type TabId = "receipt" | "invoice" | "payment" | "documents" | "manage";
+type TabId = "create" | "payment" | "documents" | "manage";
 
 type Props = {
   clients: MorningClient[];
@@ -132,7 +145,8 @@ export function MorningHubContent({
   actions,
 }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<TabId>("receipt");
+  const [tab, setTab] = useState<TabId>("create");
+  const [docKind, setDocKind] = useState<IssuableDocumentKind>("receipt");
 
   const morningIncome = income.filter((i) => i.giId || i.source === "created" || i.source === "sync");
   const pending = income.filter((i) => i.status === "ממתין" || i.status === "באיחור");
@@ -155,22 +169,16 @@ export function MorningHubContent({
     }
   }
 
-  const [rAmount, setRAmount] = useState("");
-  const [rDesc, setRDesc] = useState("");
-  const [rProject, setRProject] = useState("");
-  const [rPaymentType, setRPaymentType] = useState<GiPaymentTypeCode>(4);
-  const [rSendEmail, setRSendEmail] = useState(true);
-  const [rLoading, setRLoading] = useState(false);
-  const [rError, setRError] = useState("");
-  const [rSuccess, setRSuccess] = useState("");
+  const [dAmount, setDAmount] = useState("");
+  const [dDesc, setDDesc] = useState("");
+  const [dProject, setDProject] = useState("");
+  const [dPaymentType, setDPaymentType] = useState<GiPaymentTypeCode>(4);
+  const [dSendEmail, setDSendEmail] = useState(true);
+  const [dLoading, setDLoading] = useState(false);
+  const [dError, setDError] = useState("");
+  const [dSuccess, setDSuccess] = useState("");
 
-  const [iAmount, setIAmount] = useState("");
-  const [iDesc, setIDesc] = useState("");
-  const [iProject, setIProject] = useState("");
-  const [iSendEmail, setISendEmail] = useState(true);
-  const [iLoading, setILoading] = useState(false);
-  const [iError, setIError] = useState("");
-  const [iSuccess, setISuccess] = useState("");
+  const catalog = getCatalogItem(docKind);
 
   const [pAmount, setPAmount] = useState("");
   const [pDesc, setPDesc] = useState("");
@@ -180,75 +188,57 @@ export function MorningHubContent({
   const [pUrl, setPUrl] = useState("");
   const [pCopied, setPCopied] = useState(false);
 
-  async function submitReceipt(preview = false) {
-    setRLoading(!preview);
-    setRError("");
-    setRSuccess("");
+  async function submitDocument(preview = false) {
+    if (!clientName.trim()) {
+      setDError("יש לבחור או להזין שם לקוח");
+      return;
+    }
+    if (!dAmount || !dDesc.trim()) {
+      setDError("יש למלא סכום ותיאור");
+      return;
+    }
+
+    setDLoading(!preview);
+    setDError("");
+    setDSuccess("");
     try {
       const res = await fetch("/api/greeninvoice/documents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: preview ? "preview_receipt" : "receipt",
+          action: preview ? `preview_${docKind}` : docKind,
           clientId: clientId || undefined,
-          clientName,
+          clientName: clientName.trim(),
           clientEmail: clientEmail || undefined,
-          amount: Number(rAmount),
-          description: rDesc,
-          project: rProject,
-          paymentType: rPaymentType,
-          sendEmail: !preview && rSendEmail && Boolean(clientEmail),
+          amount: Number(dAmount),
+          description: dDesc.trim(),
+          project: dProject.trim() || undefined,
+          paymentType: catalog.needsPayment ? dPaymentType : undefined,
+          sendEmail: !preview && dSendEmail && Boolean(clientEmail),
         }),
       });
       const data = await res.json();
       if (!data.ok) {
-        setRError(data.error ?? "שגיאה");
+        setDError(data.error ?? "שגיאה ביצירת מסמך");
         return;
       }
       if (preview && data.previewBase64) {
         const w = window.open();
-        if (w) w.document.write(`<iframe width="100%" height="100%" src="data:application/pdf;base64,${data.previewBase64}"></iframe>`);
+        if (w) {
+          w.document.write(
+            `<iframe width="100%" height="100%" src="data:application/pdf;base64,${data.previewBase64}"></iframe>`
+          );
+        }
         return;
       }
-      setRSuccess(`קבלה ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה במייל" : ""}`);
+      setDSuccess(
+        `${catalog.label} ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה במייל" : ""}`
+      );
       router.refresh();
     } catch {
-      setRError("שגיאת רשת");
+      setDError("שגיאת רשת — נסה שוב");
     } finally {
-      setRLoading(false);
-    }
-  }
-
-  async function submitInvoice() {
-    setILoading(true);
-    setIError("");
-    setISuccess("");
-    try {
-      const res = await fetch("/api/greeninvoice/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "invoice",
-          clientId: clientId || undefined,
-          clientName,
-          clientEmail: clientEmail || undefined,
-          amount: Number(iAmount),
-          description: iDesc,
-          project: iProject,
-          sendEmail: iSendEmail && Boolean(clientEmail),
-        }),
-      });
-      const data = await res.json();
-      if (!data.ok) {
-        setIError(data.error ?? "שגיאה");
-        return;
-      }
-      setISuccess(`חשבונית ${data.documentNumber ?? ""} הונפקה${data.sent ? " ונשלחה במייל" : ""}`);
-      router.refresh();
-    } catch {
-      setIError("שגיאת רשת");
-    } finally {
-      setILoading(false);
+      setDLoading(false);
     }
   }
 
@@ -283,7 +273,8 @@ export function MorningHubContent({
     }
   }
 
-  const isFormTab = tab === "receipt" || tab === "invoice" || tab === "payment";
+  const isFormTab = tab === "create" || tab === "payment";
+  const canSubmitDoc = Boolean(dAmount && dDesc.trim() && clientName.trim() && connected);
 
   return (
     <div className="space-y-6">
@@ -361,24 +352,25 @@ export function MorningHubContent({
         </div>
       </Card>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <MorningActionTile
-          icon={Receipt}
-          title="קבלה"
-          desc="תשלום שהתקבל — מסמך 400"
-          active={tab === "receipt"}
-          onClick={() => setTab("receipt")}
-          accent="emerald"
-        />
-        <MorningActionTile
-          icon={FileText}
-          title="חשבונית מס"
-          desc="חיוב לפני תשלום — 305"
-          active={tab === "invoice"}
-          onClick={() => setTab("invoice")}
-          accent="blue"
-        />
+      {/* Quick actions — כל סוגי המסמכים */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {DOCUMENT_CATALOG.map((item) => {
+          const Icon = DOC_ICONS[item.kind];
+          return (
+            <MorningActionTile
+              key={item.kind}
+              icon={Icon}
+              title={item.shortLabel}
+              desc={`${item.desc} · ${item.type}`}
+              active={tab === "create" && docKind === item.kind}
+              onClick={() => {
+                setDocKind(item.kind);
+                setTab("create");
+              }}
+              accent={item.accent}
+            />
+          );
+        })}
         <MorningActionTile
           icon={Link2}
           title="קישור תשלום"
@@ -413,8 +405,8 @@ export function MorningHubContent({
         ))}
       </div>
 
-      {/* Receipt form */}
-      {tab === "receipt" && (
+      {/* Unified document form */}
+      {tab === "create" && (
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,300px)_1fr] gap-5">
           <ClientContextPanel
             clients={clients}
@@ -424,70 +416,69 @@ export function MorningHubContent({
             onEmailChange={setClientEmail}
           />
           <Card className="p-5 sm:p-6">
-            <SectionHeading title="הנפקת קבלה" subtitle="מסמך 400 · תאריך תשלום: היום" />
+            <SectionHeading
+              title={`הנפקת ${catalog.label}`}
+              subtitle={`מסמך ${catalog.type} · ${catalog.desc}`}
+            />
             <div className="space-y-4 mt-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <MorningField label="סכום (₪)">
-                  <MorningInput type="number" value={rAmount} onChange={setRAmount} placeholder="0" />
+                <MorningField label="סכום (₪)" hint={catalog.amountHint}>
+                  <MorningInput type="number" value={dAmount} onChange={setDAmount} placeholder="0" />
                 </MorningField>
-                <MorningField label="סוג תשלום" hint={mapPaymentTypeLabel(rPaymentType)}>
-                  <MorningSelect value={rPaymentType} onChange={(v) => setRPaymentType(Number(v) as GiPaymentTypeCode)}>
-                    {PAYMENT_TYPES.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </MorningSelect>
-                </MorningField>
+                {catalog.needsPayment ? (
+                  <MorningField label="סוג תשלום" hint={mapPaymentTypeLabel(dPaymentType)}>
+                    <MorningSelect
+                      value={dPaymentType}
+                      onChange={(v) => setDPaymentType(Number(v) as GiPaymentTypeCode)}
+                    >
+                      {PAYMENT_TYPES.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </MorningSelect>
+                  </MorningField>
+                ) : (
+                  <MorningField label="מע״מ" hint="מחושב אוטומטית לפי סוג המסמך">
+                    <div className="px-3 py-2.5 rounded-xl border border-border-soft bg-bg text-[13px] text-text-secondary">
+                      {catalog.vatIncluded ? "כולל מע״מ" : "לפני מע״מ"}
+                    </div>
+                  </MorningField>
+                )}
               </div>
               <MorningField label="תיאור (מופיע במסמך)">
-                <MorningInput value={rDesc} onChange={setRDesc} placeholder="לדוגמה: מנוי חודשי" required />
+                <MorningInput value={dDesc} onChange={setDDesc} placeholder="לדוגמה: מנוי חודשי / פרויקט X" required />
               </MorningField>
               <MorningField label="פרויקט (אופציונלי)">
-                <MorningInput value={rProject} onChange={setRProject} placeholder="שם פרויקט פנימי" />
+                <MorningInput value={dProject} onChange={setDProject} placeholder="שם פרויקט פנימי" />
               </MorningField>
               <MorningToggle
-                checked={rSendEmail}
-                onChange={setRSendEmail}
-                label="שלח קבלה במייל לאחר הנפקה"
+                checked={dSendEmail}
+                onChange={setDSendEmail}
+                label={`שלח ${catalog.label} במייל לאחר הנפקה`}
                 disabled={!clientEmail}
                 icon={Mail}
               />
-              {rError && <MorningAlert type="error">{rError}</MorningAlert>}
-              {rSuccess && <MorningAlert type="success">{rSuccess}</MorningAlert>}
+              {dError && <MorningAlert type="error">{dError}</MorningAlert>}
+              {dSuccess && <MorningAlert type="success">{dSuccess}</MorningAlert>}
               <div className="flex flex-wrap gap-2 pt-2">
-                <MorningBtn variant="secondary" icon={Eye} onClick={() => submitReceipt(true)} disabled={rLoading || !rAmount || !rDesc}>
+                <MorningBtn
+                  variant="secondary"
+                  icon={Eye}
+                  onClick={() => submitDocument(true)}
+                  disabled={dLoading || !canSubmitDoc}
+                >
                   תצוגה מקדימה
                 </MorningBtn>
-                <MorningBtn icon={Receipt} onClick={() => submitReceipt(false)} loading={rLoading} disabled={!rAmount || !rDesc || !connected}>
-                  הנפק קבלה
+                <MorningBtn
+                  icon={DOC_ICONS[docKind]}
+                  onClick={() => submitDocument(false)}
+                  loading={dLoading}
+                  disabled={!canSubmitDoc}
+                >
+                  הנפק {catalog.label}
                 </MorningBtn>
               </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* Invoice form */}
-      {tab === "invoice" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(240px,300px)_1fr] gap-5">
-          <ClientContextPanel clients={clients} clientId={clientId} clientEmail={clientEmail} onClientChange={onClientChange} onEmailChange={setClientEmail} />
-          <Card className="p-5 sm:p-6">
-            <SectionHeading title="הנפקת חשבונית מס" subtitle="מסמך 305 · לפני קבלת תשלום" />
-            <div className="space-y-4 mt-2">
-              <MorningField label="סכום (₪)">
-                <MorningInput type="number" value={iAmount} onChange={setIAmount} placeholder="0" />
-              </MorningField>
-              <MorningField label="תיאור">
-                <MorningInput value={iDesc} onChange={setIDesc} placeholder="תיאור החיוב" />
-              </MorningField>
-              <MorningField label="פרויקט">
-                <MorningInput value={iProject} onChange={setIProject} placeholder="אופציונלי" />
-              </MorningField>
-              <MorningToggle checked={iSendEmail} onChange={setISendEmail} label="שלח חשבונית במייל" disabled={!clientEmail} icon={Mail} />
-              {iError && <MorningAlert type="error">{iError}</MorningAlert>}
-              {iSuccess && <MorningAlert type="success">{iSuccess}</MorningAlert>}
-              <MorningBtn icon={FileText} onClick={submitInvoice} loading={iLoading} disabled={!iAmount || !iDesc || !connected} className="w-full sm:w-auto">
-                הנפק חשבונית
-              </MorningBtn>
             </div>
           </Card>
         </div>
@@ -567,8 +558,8 @@ export function MorningHubContent({
               title="אין מסמכים עדיין"
               desc="הנפק קבלה או חשבונית בלשוניות למעלה — המסמכים יופיעו כאן אוטומטית"
               action={
-                <MorningBtn icon={Receipt} onClick={() => setTab("receipt")}>
-                  הנפק קבלה ראשונה
+                <MorningBtn icon={Receipt} onClick={() => { setDocKind("receipt"); setTab("create"); }}>
+                  הנפק מסמך ראשון
                 </MorningBtn>
               }
             />
