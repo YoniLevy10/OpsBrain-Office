@@ -1,4 +1,5 @@
 import { isGreenInvoiceConfigured } from "../greeninvoice";
+import { getGmailConnectionStatus } from "../gmail/store";
 import {
   buildDocumentPayload,
   buildPaymentFormPayload,
@@ -284,6 +285,13 @@ export async function sendGiDocument(
   clientId?: string
 ): Promise<GiActionResult> {
   if (!isGreenInvoiceConfigured()) return notConfigured();
+
+  const gmailStatus = await getGmailConnectionStatus();
+  if (gmailStatus.connected) {
+    const { sendGiDocumentViaGmail } = await import("../gmail/send-document");
+    return sendGiDocumentViaGmail(documentId, emails, { incomeId, clientId });
+  }
+
   try {
     await sendDocument(documentId, { emails });
     await logGiAction({

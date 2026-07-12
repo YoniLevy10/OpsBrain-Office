@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { NotificationsButton } from "@/components/layout/NotificationsButton";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { RefreshButton } from "@/components/layout/RefreshButton";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import type { Notification } from "@/lib/analytics";
 
 export function TopBar({
@@ -46,6 +47,9 @@ export function TopBar({
         <div className="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-border-soft/70">
           <div className="md:hidden min-w-0 flex-1">{action}</div>
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ms-auto">
+            <div className="hidden md:flex">
+              <ThemeToggle variant="pill" />
+            </div>
             <RefreshButton />
             <GlobalSearch />
             <NotificationsButton notifications={notifications} />

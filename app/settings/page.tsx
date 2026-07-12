@@ -2,6 +2,8 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { SyncButton } from "@/components/ui/SyncButton";
 import { isGreenInvoiceConfigured, testGreenInvoiceConnection, getGreenInvoiceEnvLabel } from "@/lib/greeninvoice";
+import { isGmailConfigured } from "@/lib/gmail";
+import { getGmailConnectionStatus } from "@/lib/gmail/store";
 import { getSupabase } from "@/lib/supabase";
 import { getLastSyncTime, getUsdRate } from "@/lib/meta";
 import {
@@ -14,9 +16,13 @@ import {
   DollarSign,
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
+import { ThemeSettingsPanel } from "@/components/settings/ThemeSettingsPanel";
+import { AccessUnlockPanel } from "@/components/settings/AccessUnlockPanel";
 import { GiActionsLog } from "@/components/greeninvoice/GiActionsLog";
 import { BankImportPanel } from "@/components/settings/BankImportPanel";
+import { GmailConnectPanel } from "@/components/settings/GmailConnectPanel";
 import { UsdRateForm } from "@/components/settings/UsdRateForm";
+import { hasAppAccess, isAppAccessRequired } from "@/lib/app-access";
 
 export const revalidate = 60;
 
@@ -64,10 +70,14 @@ function formatSyncTime(iso: string): string {
 export default async function SettingsPage() {
   const giConnected = isGreenInvoiceConfigured();
   const giTest = giConnected ? await testGreenInvoiceConnection() : { ok: false as const };
+  const gmailConfigured = isGmailConfigured();
+  const gmailStatus = gmailConfigured ? await getGmailConnectionStatus() : { connected: false, configured: false };
   const sb = getSupabase();
   const sbConnected = Boolean(sb);
   const lastSync = await getLastSyncTime();
   const usdRate = await getUsdRate();
+  const accessRequired = isAppAccessRequired();
+  const accessOk = await hasAppAccess();
 
   return (
     <div>
@@ -77,6 +87,8 @@ export default async function SettingsPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        {accessRequired && !accessOk && <AccessUnlockPanel />}
+        <ThemeSettingsPanel />
         <EnvChecklist />
 
         <Card className="p-5">
@@ -96,6 +108,17 @@ export default async function SettingsPage() {
             label="Supabase"
             connected={sbConnected}
             detail={sbConnected ? "מסד נתונים פעיל — טבלאות ob_*" : "Supabase לא מוגדר"}
+          />
+          <StatusRow
+            label="Gmail — מייל החברה"
+            connected={gmailStatus.connected}
+            detail={
+              !gmailConfigured
+                ? "הוסף GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET"
+                : gmailStatus.connected
+                  ? gmailStatus.email ?? "מחובר"
+                  : "לחץ התחבר בהגדרות Gmail"
+            }
           />
           {lastSync && (
             <div className="flex items-center gap-3 py-3 border-b border-border-soft last:border-0">
@@ -123,6 +146,8 @@ export default async function SettingsPage() {
         </Card>
 
         <BankImportPanel />
+
+        <GmailConnectPanel />
 
         <GiActionsLog />
 

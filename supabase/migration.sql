@@ -133,3 +133,18 @@ do $$ begin
     create policy "ob_meta_all" on public.ob_meta for all using (true) with check (true);
   end if;
 end $$;
+
+-- === Gmail OAuth (company inbox) ===
+-- Gmail OAuth (service-role only — no anon policies)
+create table if not exists public.ob_gmail_connection (
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  access_token text not null,
+  refresh_token text not null,
+  expires_at timestamptz not null,
+  scopes text,
+  connected_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.ob_gmail_connection enable row level security;
+drop policy if exists "ob_gmail_connection_all" on public.ob_gmail_connection;

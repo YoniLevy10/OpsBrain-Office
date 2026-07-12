@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,17 +16,19 @@ import {
   Landmark,
   BarChart3,
   FileText,
+  Mail,
   X,
 } from "lucide-react";
 
 const mainItems = [
   { href: "/", label: "בקרה", icon: LayoutDashboard },
   { href: "/clients", label: "לקוחות", icon: Users },
+  { href: "/email", label: "מייל", icon: Mail },
   { href: "/morning", label: "חשבונית", icon: FileText, featured: true },
-  { href: "/income", label: "הכנסות", icon: TrendingUp },
 ];
 
 const moreItems = [
+  { href: "/income", label: "הכנסות", icon: TrendingUp },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/bank", label: "בנק", icon: Landmark },
@@ -124,15 +127,18 @@ export function MobileNav() {
             style={{ paddingBottom: "calc(1rem + var(--safe-area-bottom))" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 gap-2">
               <span className="text-[14px] font-bold">עוד</span>
-              <button
+              <div className="flex items-center gap-2">
+                <ThemeToggle variant="pill" />
+                <button
                 onClick={() => setMoreOpen(false)}
                 aria-label="סגור"
                 className="w-9 h-9 flex items-center justify-center text-text-tertiary"
               >
                 <X className="w-4 h-4" />
               </button>
+              </div>
             </div>
             <div className="space-y-1">
               {moreItems.map((item) => {
