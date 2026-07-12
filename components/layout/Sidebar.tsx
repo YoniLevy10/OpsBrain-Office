@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   Landmark,
   BarChart3,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/clients", label: "לקוחות", icon: Users },
   { href: "/income", label: "הכנסות", icon: TrendingUp },
+  { href: "/morning", label: "חשבונית ירוקה", icon: FileText },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
   { href: "/bank", label: "בנק", icon: Landmark },

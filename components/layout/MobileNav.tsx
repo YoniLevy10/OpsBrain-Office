@@ -14,6 +14,7 @@ import {
   Settings,
   Landmark,
   BarChart3,
+  FileText,
   X,
 } from "lucide-react";
 
@@ -25,6 +26,7 @@ const mainItems = [
 ];
 
 const moreItems = [
+  { href: "/morning", label: "חשבונית ירוקה", icon: FileText },
   { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/bank", label: "בנק", icon: Landmark },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
