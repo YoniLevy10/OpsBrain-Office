@@ -16,6 +16,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
+import { ThemeSettingsPanel } from "@/components/settings/ThemeSettingsPanel";
 import { GiActionsLog } from "@/components/greeninvoice/GiActionsLog";
 import { BankImportPanel } from "@/components/settings/BankImportPanel";
 import { GmailConnectPanel } from "@/components/settings/GmailConnectPanel";
@@ -82,6 +83,7 @@ export default async function SettingsPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        <ThemeSettingsPanel />
         <EnvChecklist />
 
         <Card className="p-5">
