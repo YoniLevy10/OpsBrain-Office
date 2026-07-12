@@ -30,6 +30,7 @@ import { MobileCard, MobileCardList, MobileCardRow } from "@/components/ui/Mobil
 import { SyncButton } from "@/components/ui/SyncButton";
 import { MorningClientPicker, type MorningClient } from "./MorningClientPicker";
 import { MorningIncomeActions } from "./MorningIncomeActions";
+import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import {
   MorningField,
   MorningInput,
@@ -177,6 +178,8 @@ export function MorningHubContent({
   const [dLoading, setDLoading] = useState(false);
   const [dError, setDError] = useState("");
   const [dSuccess, setDSuccess] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
 
   const catalog = getCatalogItem(docKind);
 
@@ -223,12 +226,8 @@ export function MorningHubContent({
         return;
       }
       if (preview && data.previewBase64) {
-        const w = window.open();
-        if (w) {
-          w.document.write(
-            `<iframe width="100%" height="100%" src="data:application/pdf;base64,${data.previewBase64}"></iframe>`
-          );
-        }
+        setPreviewBase64(data.previewBase64);
+        setPreviewOpen(true);
         return;
       }
       setDSuccess(
@@ -692,6 +691,16 @@ export function MorningHubContent({
           חיבור API נדרש להנפקת מסמכים · <Link href="/settings" className="text-emerald hover:underline">הגדרות חיבור</Link>
         </p>
       )}
+
+      <DocumentPreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBase64(null);
+        }}
+        previewBase64={previewBase64}
+        title={`תצוגה מקדימה — ${catalog.label}`}
+      />
     </div>
   );
 }
