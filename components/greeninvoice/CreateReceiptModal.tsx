@@ -6,6 +6,7 @@ import { Receipt, Loader2, Mail, Eye } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Card } from "@/components/ui/Primitives";
 import { mapPaymentTypeLabel } from "@/lib/greeninvoice/errors";
+import { DocumentPreviewModal } from "./DocumentPreviewModal";
 import type { GiPaymentTypeCode } from "@/lib/greeninvoice/types";
 
 type Props = {
@@ -47,6 +48,8 @@ export function CreateReceiptModal({
   const [email, setEmail] = useState(clientEmail);
   const [paymentType, setPaymentType] = useState<GiPaymentTypeCode>(4);
   const [sendEmail, setSendEmail] = useState(Boolean(clientEmail));
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewBase64, setPreviewBase64] = useState<string | null>(null);
 
   async function submit(preview = false) {
     setLoading(!preview);
@@ -77,12 +80,8 @@ export function CreateReceiptModal({
         return;
       }
       if (preview && data.previewBase64) {
-        const w = window.open();
-        if (w) {
-          w.document.write(
-            `<iframe width="100%" height="100%" src="data:application/pdf;base64,${data.previewBase64}"></iframe>`
-          );
-        }
+        setPreviewBase64(data.previewBase64);
+        setPreviewOpen(true);
         return;
       }
       setSuccess(
@@ -216,6 +215,16 @@ export function CreateReceiptModal({
           </div>
         </Card>
       </Modal>
+
+      <DocumentPreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBase64(null);
+        }}
+        previewBase64={previewBase64}
+        title="תצוגה מקדימה — קבלה"
+      />
     </>
   );
 }

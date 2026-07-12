@@ -1,9 +1,13 @@
 import { isGreenInvoiceConfigured } from "../greeninvoice";
 import {
-  buildInvoicePayload,
+  buildDocumentPayload,
   buildPaymentFormPayload,
-  buildReceiptPayload,
 } from "./build-payload";
+import {
+  getCatalogItem,
+  validateDocumentInput,
+  type IssuableDocumentKind,
+} from "./catalog";
 import {
   createDocument,
   getDocumentDownloadLinks,
@@ -20,13 +24,23 @@ import type {
   CreateInvoiceInput,
   CreateReceiptInput,
   GiActionResult,
+  GiActionType,
   GiCreateDocumentRequest,
+  GiPaymentTypeCode,
   PaymentLinkInput,
 } from "./types";
 
 function notConfigured(): GiActionResult {
   return { ok: false, error: "חשבונית ירוקה לא מחוברת" };
 }
+
+const KIND_STATUS: Record<IssuableDocumentKind, string> = {
+  receipt: "שולם",
+  invoice: "ממתין",
+  invoice_receipt: "שולם",
+  quote: "הצעה",
+  credit: "זיכוי",
+};
 
 async function resolveGiClientId(clientId?: string): Promise<string | undefined> {
   if (!clientId) return undefined;
@@ -37,7 +51,7 @@ async function resolveGiClientId(clientId?: string): Promise<string | undefined>
 async function afterDocumentCreated(
   doc: { id: string; number?: number | string; url?: { origin?: string; he?: string; en?: string } },
   params: {
-    actionType: "receipt" | "invoice" | "payment_link";
+    actionType: GiActionType;
     clientId?: string;
     clientName: string;
     project?: string;
@@ -114,33 +128,43 @@ async function afterDocumentCreated(
   };
 }
 
-export async function issueReceipt(input: CreateReceiptInput): Promise<GiActionResult> {
+export type IssueDocumentInput = CreateReceiptInput &
+  CreateInvoiceInput & { paymentType?: GiPaymentTypeCode };
+
+export async function issueDocument(
+  kind: IssuableDocumentKind,
+  input: IssueDocumentInput
+): Promise<GiActionResult> {
+  const validationError = validateDocumentInput(input);
+  if (validationError) return { ok: false, error: validationError };
+
   if (!isGreenInvoiceConfigured()) return notConfigured();
 
+  const catalog = getCatalogItem(kind);
   const giClientId = input.giClientId ?? (await resolveGiClientId(input.clientId));
-  const payload = buildReceiptPayload({ ...input, giClientId });
+  const payload = buildDocumentPayload(kind, { ...input, giClientId });
 
   try {
     const doc = await createDocument(payload);
     return afterDocumentCreated(doc, {
-      actionType: "receipt",
+      actionType: kind,
       clientId: input.clientId,
       clientName: input.clientName,
       project: input.project ?? input.description,
       amount: input.amount,
       currency: input.currency ?? "ILS",
-      documentType: 400,
-      status: "שולם",
+      documentType: catalog.type,
+      status: KIND_STATUS[kind],
       incomeId: input.incomeId,
       sendEmail: input.sendEmail,
       clientEmail: input.clientEmail,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "שגיאה ביצירת קבלה";
+    const msg = err instanceof Error ? err.message : `שגיאה ביצירת ${catalog.label}`;
     await logGiAction({
       incomeId: input.incomeId,
       clientId: input.clientId,
-      actionType: "receipt",
+      actionType: kind,
       status: "failed",
       amount: input.amount,
       currency: input.currency ?? "ILS",
@@ -150,40 +174,12 @@ export async function issueReceipt(input: CreateReceiptInput): Promise<GiActionR
   }
 }
 
+export async function issueReceipt(input: CreateReceiptInput): Promise<GiActionResult> {
+  return issueDocument("receipt", input);
+}
+
 export async function issueInvoice(input: CreateInvoiceInput): Promise<GiActionResult> {
-  if (!isGreenInvoiceConfigured()) return notConfigured();
-
-  const giClientId = input.giClientId ?? (await resolveGiClientId(input.clientId));
-  const payload = buildInvoicePayload({ ...input, giClientId });
-
-  try {
-    const doc = await createDocument(payload);
-    return afterDocumentCreated(doc, {
-      actionType: "invoice",
-      clientId: input.clientId,
-      clientName: input.clientName,
-      project: input.project ?? input.description,
-      amount: input.amount,
-      currency: input.currency ?? "ILS",
-      documentType: 305,
-      status: "ממתין",
-      incomeId: input.incomeId,
-      sendEmail: input.sendEmail,
-      clientEmail: input.clientEmail,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "שגיאה ביצירת חשבונית";
-    await logGiAction({
-      incomeId: input.incomeId,
-      clientId: input.clientId,
-      actionType: "invoice",
-      status: "failed",
-      amount: input.amount,
-      currency: input.currency ?? "ILS",
-      errorMessage: msg,
-    });
-    return { ok: false, error: msg };
-  }
+  return issueDocument("invoice", input);
 }
 
 export async function createPaymentLink(input: PaymentLinkInput): Promise<GiActionResult> {
@@ -269,7 +265,9 @@ export async function createPaymentLink(input: PaymentLinkInput): Promise<GiActi
   }
 }
 
-export async function previewGiDocument(payload: GiCreateDocumentRequest): Promise<GiActionResult & { previewBase64?: string }> {
+export async function previewGiDocument(
+  payload: GiCreateDocumentRequest
+): Promise<GiActionResult & { previewBase64?: string }> {
   if (!isGreenInvoiceConfigured()) return notConfigured();
   try {
     const res = await previewDocument(payload);

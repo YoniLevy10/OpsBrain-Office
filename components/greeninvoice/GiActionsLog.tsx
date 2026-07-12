@@ -4,6 +4,9 @@ import { Card, SectionHeading, Badge } from "@/components/ui/Primitives";
 const ACTION_LABELS: Record<string, string> = {
   receipt: "קבלה",
   invoice: "חשבונית",
+  invoice_receipt: "חשבונית+קבלה",
+  quote: "הצעת מחיר",
+  credit: "זיכוי",
   payment_link: "קישור תשלום",
   send_email: "שליחה במייל",
   credit_note: "זיכוי",
