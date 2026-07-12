@@ -29,11 +29,20 @@ export type GmailMessageListItem = {
   date?: string;
   labelIds?: string[];
   unread?: boolean;
+  /** RFC 822 Message-ID header — used for reply threading */
+  messageId?: string;
 };
 
 export type GmailMessageDetail = GmailMessageListItem & {
   bodyHtml?: string;
   bodyText?: string;
+  references?: string;
+};
+
+export type EmailAttachment = {
+  filename: string;
+  mimeType: string;
+  content: Buffer;
 };
 
 export type GmailListResponse = {
@@ -64,7 +73,9 @@ export type SendEmailInput = {
   html?: boolean;
   cc?: string;
   bcc?: string;
+  /** Gmail message id or RFC Message-ID header */
   replyToMessageId?: string;
+  attachments?: EmailAttachment[];
 };
 
 export type GmailConnectionStatus = {

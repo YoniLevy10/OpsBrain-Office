@@ -3,10 +3,13 @@ import { Mail, ExternalLink } from "lucide-react";
 import { Card, SectionHeading } from "@/components/ui/Primitives";
 import { isGmailConfigured } from "@/lib/gmail";
 import { getGmailConnectionStatus } from "@/lib/gmail/store";
+import { hasAppAccess, isAppAccessRequired } from "@/lib/app-access";
 
 export async function GmailConnectPanel() {
   const configured = isGmailConfigured();
   const status = configured ? await getGmailConnectionStatus() : { connected: false, configured: false };
+  const accessRequired = isAppAccessRequired();
+  const accessOk = await hasAppAccess();
 
   return (
     <Card className="p-5">
@@ -18,6 +21,11 @@ export async function GmailConnectPanel() {
             {configured ? "מוגדר" : "חסר"}
           </span>
         </div>
+        {accessRequired && !accessOk && (
+          <p className="text-[12px] text-brass p-3 rounded-xl bg-brass/10">
+            נדרשת סיסמת גישה לפני חיבור Gmail — הזן <code className="text-[11px]">OPSBRAIN_ACCESS_SECRET</code> למעלה.
+          </p>
+        )}
         {status.connected ? (
           <div className="p-3 rounded-xl bg-emerald/[0.06] border border-emerald/20">
             <div className="flex items-center gap-2 text-[13px] font-semibold text-emerald">

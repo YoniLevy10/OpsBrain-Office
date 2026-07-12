@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
+import { assertAppAccess } from "@/lib/app-access";
 import { sendCompanyEmail } from "@/lib/gmail/store";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
+    await assertAppAccess();
     const body = (await req.json()) as {
       to?: string;
       subject?: string;
@@ -35,9 +37,11 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "שגיאה בשליחה";
+    const denied = msg.includes("גישה נדחתה");
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : "שגיאה בשליחה" },
-      { status: 500 }
+      { ok: false, error: msg },
+      { status: denied ? 403 : 500 }
     );
   }
 }

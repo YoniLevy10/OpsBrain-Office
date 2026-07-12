@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { assertAppAccess } from "@/lib/app-access";
 import { exchangeGmailCode, getGmailAppBaseUrl } from "@/lib/gmail";
 import { saveGmailConnection } from "@/lib/gmail/store";
 
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
   }
 
   try {
+    await assertAppAccess();
     const tokens = await exchangeGmailCode(code);
     await saveGmailConnection(tokens);
     const res = NextResponse.redirect(`${base}/email?connected=1`);

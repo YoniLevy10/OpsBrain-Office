@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Mail,
@@ -13,9 +13,18 @@ import {
   Wifi,
   ExternalLink,
   Reply,
+  ChevronDown,
+  User,
 } from "lucide-react";
 import { Card, Badge, SectionHeading } from "@/components/ui/Primitives";
 import Link from "next/link";
+import {
+  disconnectGmailAccount,
+  fetchInboxMessage,
+  fetchInboxMessages,
+  sendInboxEmail,
+} from "@/app/email/actions";
+import { extractEmailAddress } from "@/lib/gmail/sanitize";
 
 type MessageItem = {
   id: string;
@@ -26,17 +35,23 @@ type MessageItem = {
   to?: string;
   date?: string;
   unread?: boolean;
+  messageId?: string;
 };
 
 type MessageDetail = MessageItem & {
   bodyHtml?: string;
   bodyText?: string;
+  references?: string;
 };
+
+type ClientLink = { id: string; company: string; email: string };
 
 type Props = {
   configured: boolean;
   connected: boolean;
   email?: string;
+  clients?: ClientLink[];
+  accessDenied?: boolean;
 };
 
 function formatDate(dateStr?: string) {
@@ -59,12 +74,20 @@ function parseFrom(from?: string) {
   return (match?.[1] ?? from).trim().replace(/"/g, "");
 }
 
-export function EmailInboxContent({ configured, connected, email }: Props) {
+export function EmailInboxContent({
+  configured,
+  connected,
+  email,
+  clients = [],
+  accessDenied = false,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<MessageItem[]>([]);
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>();
   const [selected, setSelected] = useState<MessageDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -74,6 +97,14 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState("");
+
+  const clientByEmail = useMemo(() => {
+    const map = new Map<string, ClientLink>();
+    for (const c of clients) {
+      if (c.email) map.set(c.email.toLowerCase(), c);
+    }
+    return map;
+  }, [clients]);
 
   const urlError = searchParams.get("error");
   const urlConnected = searchParams.get("connected");
@@ -86,38 +117,44 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
     }
   }, [urlError, urlConnected, router]);
 
-  const loadMessages = useCallback(async (q?: string) => {
-    setLoading(true);
+  const loadMessages = useCallback(async (q?: string, append = false, pageToken?: string) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams();
-      if (q) params.set("q", q);
-      const res = await fetch(`/api/gmail/messages?${params}`);
-      const data = await res.json();
+      const data = await fetchInboxMessages({ q, pageToken });
       if (!data.ok) {
         setError(data.error ?? "שגיאה בטעינה");
-        setMessages([]);
+        if (!append) setMessages([]);
         return;
       }
-      setMessages(data.messages ?? []);
+      setMessages((prev) => (append ? [...prev, ...(data.messages ?? [])] : data.messages ?? []));
+      setNextPageToken(data.nextPageToken);
     } catch {
       setError("שגיאת רשת");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    if (connected) loadMessages();
-  }, [connected, loadMessages]);
+    if (connected && !accessDenied) loadMessages();
+  }, [connected, accessDenied, loadMessages]);
 
   async function openMessage(id: string) {
     setDetailLoading(true);
     setSelected(null);
     try {
-      const res = await fetch(`/api/gmail/messages/${id}`);
-      const data = await res.json();
-      if (data.ok && data.message) setSelected(data.message);
+      const data = await fetchInboxMessage(id);
+      if (data.ok && data.message) {
+        setSelected(data.message);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, unread: false } : m))
+        );
+      } else if (data.error) {
+        setError(data.error);
+      }
     } finally {
       setDetailLoading(false);
     }
@@ -128,17 +165,12 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
     setSendSuccess("");
     setError("");
     try {
-      const res = await fetch("/api/gmail/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: composeTo,
-          subject: composeSubject,
-          body: composeBody,
-          replyToMessageId: selected?.id,
-        }),
+      const data = await sendInboxEmail({
+        to: composeTo,
+        subject: composeSubject,
+        body: composeBody,
+        replyToMessageId: selected?.messageId ?? selected?.id,
       });
-      const data = await res.json();
       if (!data.ok) {
         setError(data.error ?? "שגיאה בשליחה");
         return;
@@ -157,8 +189,9 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
   }
 
   async function disconnect() {
-    await fetch("/api/gmail/disconnect", { method: "POST" });
-    router.refresh();
+    const res = await disconnectGmailAccount();
+    if (!res.ok) setError(res.error ?? "שגיאה בניתוק");
+    else router.refresh();
   }
 
   function startReply() {
@@ -167,6 +200,26 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
     setComposeSubject(selected.subject?.startsWith("Re:") ? selected.subject : `Re: ${selected.subject ?? ""}`);
     setComposeBody(`\n\n---\n${selected.bodyText ?? selected.snippet ?? ""}`);
     setComposeOpen(true);
+  }
+
+  function matchedClient(from?: string) {
+    const addr = extractEmailAddress(from);
+    return addr ? clientByEmail.get(addr) : undefined;
+  }
+
+  if (accessDenied) {
+    return (
+      <Card className="p-8 text-center max-w-lg mx-auto">
+        <Mail className="w-12 h-12 text-brass mx-auto mb-4" />
+        <h2 className="text-[17px] font-bold mb-2">נדרשת סיסמת גישה</h2>
+        <p className="text-[13px] text-text-secondary mb-4">
+          הזן את <code className="text-[12px]">OPSBRAIN_ACCESS_SECRET</code> בהגדרות כדי לגשת למייל.
+        </p>
+        <Link href="/settings" className="text-emerald text-[13px] font-semibold hover:underline">
+          להגדרות →
+        </Link>
+      </Card>
+    );
   }
 
   if (!configured) {
@@ -216,7 +269,6 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card className="overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-l from-blue/[0.06] to-transparent">
           <div className="flex items-center gap-3">
@@ -279,7 +331,6 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
         <div className="p-3 rounded-xl bg-emerald/10 text-emerald text-[13px]">{sendSuccess}</div>
       )}
 
-      {/* Search */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
@@ -302,9 +353,7 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
         </button>
       </div>
 
-      {/* Split inbox — "חלון" דו-פאנלי */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] gap-4 min-h-[min(70dvh,640px)]">
-        {/* Message list */}
         <Card className="overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b border-border-soft flex items-center gap-2">
             <Inbox className="w-4 h-4 text-text-tertiary" />
@@ -319,32 +368,47 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
             ) : messages.length === 0 ? (
               <p className="text-center text-[13px] text-text-tertiary py-12">אין הודעות</p>
             ) : (
-              messages.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => openMessage(m.id)}
-                  className={`w-full text-start px-4 py-3 hover:bg-surface-hover transition-colors ${
-                    selected?.id === m.id ? "bg-blue/[0.06] border-r-2 border-blue" : ""
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className={`text-[13px] truncate ${m.unread ? "font-bold" : "font-medium"}`}>
-                      {parseFrom(m.from)}
-                    </span>
-                    <span className="text-[10px] text-text-tertiary shrink-0">{formatDate(m.date)}</span>
-                  </div>
-                  <div className={`text-[12.5px] truncate ${m.unread ? "font-semibold" : ""}`}>
-                    {m.subject || "(ללא נושא)"}
-                  </div>
-                  <div className="text-[11px] text-text-tertiary truncate mt-0.5">{m.snippet}</div>
-                </button>
-              ))
+              messages.map((m) => {
+                const client = matchedClient(m.from);
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => openMessage(m.id)}
+                    className={`w-full text-start px-4 py-3 hover:bg-surface-hover transition-colors ${
+                      selected?.id === m.id ? "bg-blue/[0.06] border-r-2 border-blue" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <span className={`text-[13px] truncate ${m.unread ? "font-bold" : "font-medium"}`}>
+                        {client ? client.company : parseFrom(m.from)}
+                      </span>
+                      <span className="text-[10px] text-text-tertiary shrink-0">{formatDate(m.date)}</span>
+                    </div>
+                    <div className={`text-[12.5px] truncate ${m.unread ? "font-semibold" : ""}`}>
+                      {m.subject || "(ללא נושא)"}
+                    </div>
+                    <div className="text-[11px] text-text-tertiary truncate mt-0.5">{m.snippet}</div>
+                  </button>
+                );
+              })
             )}
           </div>
+          {nextPageToken && (
+            <div className="p-3 border-t border-border-soft">
+              <button
+                type="button"
+                onClick={() => loadMessages(search, true, nextPageToken)}
+                disabled={loadingMore}
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-border text-[12px] font-medium hover:bg-surface-hover disabled:opacity-50"
+              >
+                {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                טען עוד
+              </button>
+            </div>
+          )}
         </Card>
 
-        {/* Message preview pane */}
         <Card className="overflow-hidden flex flex-col">
           {detailLoading ? (
             <div className="flex-1 flex items-center justify-center">
@@ -364,6 +428,15 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
                   <div><span className="text-text-tertiary">אל: </span>{selected.to}</div>
                   <div className="text-text-tertiary">{formatDate(selected.date)}</div>
                 </div>
+                {matchedClient(selected.from) && (
+                  <Link
+                    href={`/clients/${matchedClient(selected.from)!.id}`}
+                    className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald/10 text-emerald text-[11px] font-semibold hover:bg-emerald/15"
+                  >
+                    <User className="w-3 h-3" />
+                    {matchedClient(selected.from)!.company}
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={startReply}
@@ -373,10 +446,10 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
                   השב
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-5">
+              <div className="flex-1 overflow-y-auto p-5 email-body">
                 {selected.bodyHtml ? (
                   <div
-                    className="prose prose-sm max-w-none text-[13px] leading-relaxed"
+                    className="prose prose-sm max-w-none text-[13px] leading-relaxed email-html"
                     dangerouslySetInnerHTML={{ __html: selected.bodyHtml }}
                   />
                 ) : (
@@ -390,7 +463,6 @@ export function EmailInboxContent({ configured, connected, email }: Props) {
         </Card>
       </div>
 
-      {/* Compose modal */}
       {composeOpen && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/35 p-4">
           <Card className="w-full max-w-lg p-5 space-y-4 max-h-[85dvh] overflow-y-auto">

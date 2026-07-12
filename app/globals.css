@@ -172,6 +172,20 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px;
 }
 
+.email-html img {
+  max-width: 100%;
+  height: auto;
+}
+
+.email-html a {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+.email-body {
+  word-break: break-word;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -187,7 +187,9 @@ export class GmailClient {
     return this.gmailFetch<GmailMessageRaw>(`/users/me/messages/${id}?${query}`);
   }
 
-  async sendMessage(input: SendEmailInput): Promise<{ id: string; threadId?: string }> {
+  async sendMessage(
+    input: SendEmailInput & { inReplyTo?: string; references?: string }
+  ): Promise<{ id: string; threadId?: string }> {
     const raw = buildRawEmail(input);
     const encoded = base64UrlEncode(raw);
     return this.gmailFetch<{ id: string; threadId?: string }>("/users/me/messages/send", {
@@ -199,27 +201,66 @@ export class GmailClient {
   getProfile(): Promise<{ emailAddress: string }> {
     return this.gmailFetch<{ emailAddress: string }>("/users/me/profile");
   }
+
+  modifyMessage(
+    id: string,
+    body: { addLabelIds?: string[]; removeLabelIds?: string[] }
+  ): Promise<GmailMessageRaw> {
+    return this.gmailFetch<GmailMessageRaw>(`/users/me/messages/${id}/modify`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
 }
 
-function buildRawEmail(input: SendEmailInput): string {
-  const contentType = input.html ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8";
-  const lines = [
+function buildRawEmail(input: SendEmailInput & { inReplyTo?: string; references?: string }): string {
+  const headers = [
     `To: ${input.to}`,
     input.cc ? `Cc: ${input.cc}` : null,
     input.bcc ? `Bcc: ${input.bcc}` : null,
     `Subject: =?UTF-8?B?${Buffer.from(input.subject).toString("base64")}?=`,
     "MIME-Version: 1.0",
-    `Content-Type: ${contentType}`,
-    "Content-Transfer-Encoding: base64",
   ].filter(Boolean) as string[];
 
-  if (input.replyToMessageId) {
-    lines.push(`In-Reply-To: ${input.replyToMessageId}`);
-    lines.push(`References: ${input.replyToMessageId}`);
+  const inReplyTo = input.inReplyTo ?? input.replyToMessageId;
+  if (inReplyTo) {
+    headers.push(`In-Reply-To: ${inReplyTo}`);
+    headers.push(`References: ${input.references ?? inReplyTo}`);
   }
 
+  if (input.attachments?.length) {
+    const boundary = `opsbrain_${Date.now().toString(36)}`;
+    headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+
+    const parts: string[] = [];
+    const contentType = input.html ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8";
+    parts.push(
+      `--${boundary}`,
+      `Content-Type: ${contentType}`,
+      "Content-Transfer-Encoding: base64",
+      "",
+      Buffer.from(input.body, "utf8").toString("base64")
+    );
+
+    for (const att of input.attachments) {
+      parts.push(
+        `--${boundary}`,
+        `Content-Type: ${att.mimeType}; name="${att.filename}"`,
+        `Content-Disposition: attachment; filename="${att.filename}"`,
+        "Content-Transfer-Encoding: base64",
+        "",
+        att.content.toString("base64")
+      );
+    }
+    parts.push(`--${boundary}--`);
+    return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
+  }
+
+  const contentType = input.html ? "text/html; charset=UTF-8" : "text/plain; charset=UTF-8";
+  headers.push(`Content-Type: ${contentType}`);
+  headers.push("Content-Transfer-Encoding: base64");
   const bodyB64 = Buffer.from(input.body, "utf8").toString("base64");
-  return `${lines.join("\r\n")}\r\n\r\n${bodyB64}`;
+  return `${headers.join("\r\n")}\r\n\r\n${bodyB64}`;
 }
 
 export function base64UrlEncode(str: string): string {

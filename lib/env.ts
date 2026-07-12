@@ -54,6 +54,27 @@ export function getEnvStatus(): EnvStatus[] {
       required: false,
       hint: "GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET (Google Cloud Console → Gmail API)",
     },
+    {
+      key: "GMAIL_SECURE",
+      label: "Gmail — אחסון מאובטח",
+      configured: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      required: false,
+      hint: "SUPABASE_SERVICE_ROLE_KEY — גישת שרת לטוקני OAuth (לא anon)",
+    },
+    {
+      key: "ACCESS",
+      label: "סיסמת גישה לאפליקציה",
+      configured: Boolean(process.env.OPSBRAIN_ACCESS_SECRET),
+      required: false,
+      hint: "OPSBRAIN_ACCESS_SECRET — מגן על Gmail ופעולות רגישות",
+    },
+    {
+      key: "TOKEN_ENC",
+      label: "הצפנת טוקנים",
+      configured: Boolean(process.env.OPSBRAIN_TOKEN_ENCRYPTION_KEY || process.env.CRON_SECRET),
+      required: false,
+      hint: "OPSBRAIN_TOKEN_ENCRYPTION_KEY (אופציונלי — AES-256-GCM)",
+    },
   ];
 }
 

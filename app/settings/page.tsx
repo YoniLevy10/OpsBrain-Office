@@ -17,10 +17,12 @@ import {
 } from "lucide-react";
 import { EnvChecklist } from "@/components/settings/EnvChecklist";
 import { ThemeSettingsPanel } from "@/components/settings/ThemeSettingsPanel";
+import { AccessUnlockPanel } from "@/components/settings/AccessUnlockPanel";
 import { GiActionsLog } from "@/components/greeninvoice/GiActionsLog";
 import { BankImportPanel } from "@/components/settings/BankImportPanel";
 import { GmailConnectPanel } from "@/components/settings/GmailConnectPanel";
 import { UsdRateForm } from "@/components/settings/UsdRateForm";
+import { hasAppAccess, isAppAccessRequired } from "@/lib/app-access";
 
 export const revalidate = 60;
 
@@ -74,6 +76,8 @@ export default async function SettingsPage() {
   const sbConnected = Boolean(sb);
   const lastSync = await getLastSyncTime();
   const usdRate = await getUsdRate();
+  const accessRequired = isAppAccessRequired();
+  const accessOk = await hasAppAccess();
 
   return (
     <div>
@@ -83,6 +87,7 @@ export default async function SettingsPage() {
       />
 
       <div className="px-4 sm:px-6 md:px-9 space-y-6">
+        {accessRequired && !accessOk && <AccessUnlockPanel />}
         <ThemeSettingsPanel />
         <EnvChecklist />
 

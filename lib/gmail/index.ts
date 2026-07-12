@@ -34,5 +34,10 @@ export {
   getAuthenticatedGmailClient,
   listInboxMessages,
   getInboxMessage,
+  markMessageAsRead,
   sendCompanyEmail,
 } from "./store";
+
+export { sendGiDocumentViaGmail } from "./send-document";
+export { sanitizeEmailHtml, extractEmailAddress } from "./sanitize";
+export { mapPool } from "./concurrency";

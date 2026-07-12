@@ -135,6 +135,7 @@ do $$ begin
 end $$;
 
 -- === Gmail OAuth (company inbox) ===
+-- Gmail OAuth (service-role only — no anon policies)
 create table if not exists public.ob_gmail_connection (
   id uuid primary key default gen_random_uuid(),
   email text not null,
@@ -146,8 +147,4 @@ create table if not exists public.ob_gmail_connection (
   updated_at timestamptz default now()
 );
 alter table public.ob_gmail_connection enable row level security;
-do $$ begin
-  if not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'ob_gmail_connection' and policyname = 'ob_gmail_connection_all') then
-    create policy "ob_gmail_connection_all" on public.ob_gmail_connection for all using (true) with check (true);
-  end if;
-end $$;
+drop policy if exists "ob_gmail_connection_all" on public.ob_gmail_connection;

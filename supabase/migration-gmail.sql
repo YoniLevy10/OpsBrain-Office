@@ -1,4 +1,4 @@
--- OpsBrain — Gmail OAuth connection
+-- OpsBrain — Gmail OAuth connection (service-role only)
 -- Run in Supabase SQL Editor
 
 create table if not exists public.ob_gmail_connection (
@@ -14,12 +14,8 @@ create table if not exists public.ob_gmail_connection (
 
 alter table public.ob_gmail_connection enable row level security;
 
-do $$ begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'ob_gmail_connection' and policyname = 'ob_gmail_connection_all'
-  ) then
-    create policy "ob_gmail_connection_all" on public.ob_gmail_connection
-      for all using (true) with check (true);
-  end if;
-end $$;
+-- Remove permissive anon policy if it exists (tokens must not be readable from the browser)
+drop policy if exists "ob_gmail_connection_all" on public.ob_gmail_connection;
+
+-- No policies for anon/authenticated roles = deny all client access.
+-- Server uses SUPABASE_SERVICE_ROLE_KEY which bypasses RLS.
