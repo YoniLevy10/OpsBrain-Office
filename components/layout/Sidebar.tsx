@@ -19,13 +19,13 @@ import {
 
 const navItems = [
   { href: "/", label: "לוח בקרה", icon: LayoutDashboard },
-  { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
+  { href: "/morning", label: "חשבונית ירוקה", icon: FileText, highlight: true },
   { href: "/clients", label: "לקוחות", icon: Users },
   { href: "/income", label: "הכנסות", icon: TrendingUp },
-  { href: "/morning", label: "חשבונית ירוקה", icon: FileText },
   { href: "/expenses", label: "הוצאות", icon: TrendingDown },
   { href: "/subscriptions", label: "מנויים", icon: RefreshCw },
   { href: "/bank", label: "בנק", icon: Landmark },
+  { href: "/analytics", label: "אנליטיקה", icon: BarChart3 },
   { href: "/reports", label: "דוחות", icon: FileSpreadsheet },
 ];
 
@@ -44,6 +44,7 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"));
           const Icon = item.icon;
+          const highlight = "highlight" in item && item.highlight;
           return (
             <Link
               key={item.href}
@@ -51,19 +52,24 @@ export function Sidebar() {
               className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] transition-colors ${
                 isActive
                   ? "bg-surface text-text-primary font-semibold"
-                  : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"
+                  : highlight
+                    ? "text-text-primary hover:bg-emerald/5 border border-transparent hover:border-emerald/15"
+                    : "text-text-secondary hover:bg-surface/60 hover:text-text-primary"
               }`}
             >
               <Icon
                 className={`w-[17px] h-[17px] transition-colors ${
-                  isActive ? "text-emerald" : "text-text-tertiary group-hover:text-text-secondary"
+                  isActive || highlight ? "text-emerald" : "text-text-tertiary group-hover:text-text-secondary"
                 }`}
                 strokeWidth={2}
               />
               {item.label}
-              {isActive && (
-                <span className="mr-auto w-1 h-1 rounded-full bg-emerald" />
+              {highlight && !isActive && (
+                <span className="mr-auto text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald/10 text-emerald">
+                  ראשי
+                </span>
               )}
+              {isActive && <span className="mr-auto w-1 h-1 rounded-full bg-emerald" />}
             </Link>
           );
         })}
