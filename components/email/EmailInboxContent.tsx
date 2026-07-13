@@ -25,8 +25,6 @@ import {
   sendInboxEmail,
 } from "@/app/email/actions";
 import { extractEmailAddress } from "@/lib/gmail/sanitize";
-import { GmailDiagnosticsPanel } from "@/components/gmail/GmailDiagnosticsPanel";
-import type { GmailDiagnostics } from "@/lib/gmail/diagnostics";
 
 type MessageItem = {
   id: string;
@@ -53,7 +51,6 @@ type Props = {
   connected: boolean;
   email?: string;
   statusError?: string;
-  diagnostics?: GmailDiagnostics;
   clients?: ClientLink[];
   accessDenied?: boolean;
 };
@@ -108,7 +105,6 @@ export function EmailInboxContent({
   connected,
   email,
   statusError,
-  diagnostics,
   clients = [],
   accessDenied = false,
 }: Props) {
@@ -139,22 +135,10 @@ export function EmailInboxContent({
 
   const urlError = searchParams.get("error");
   const urlErrorDetail = searchParams.get("detail");
-  const urlConnected = searchParams.get("connected");
 
   useEffect(() => {
     if (urlError) setError(formatOAuthError(urlError, urlErrorDetail));
-    if (urlConnected) {
-      if (connected) {
-        setSendSuccess("Gmail חובר בהצלחה!");
-      } else {
-        setError(
-          statusError ??
-            "Google אישר אבל החיבור לא נשמר — בדוק SUPABASE_SERVICE_ROLE_KEY והרץ migration-gmail.sql"
-        );
-      }
-      router.replace("/email");
-    }
-  }, [urlError, urlErrorDetail, urlConnected, connected, statusError, router]);
+  }, [urlError, urlErrorDetail]);
 
   useEffect(() => {
     if (statusError && !connected && !urlError) setError(statusError);
@@ -283,41 +267,27 @@ export function EmailInboxContent({
 
   if (!connected) {
     return (
-      <div className="space-y-4 max-w-xl mx-auto">
+      <Card className="p-8 text-center max-w-lg mx-auto">
         {error && (
-          <div className="p-3 rounded-xl bg-rose/10 text-rose text-[13px]">{error}</div>
+          <div className="p-3 rounded-xl bg-rose/10 text-rose text-[13px] mb-4 text-start">{error}</div>
         )}
-        <Card className="p-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-blue/10 flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-7 h-7 text-blue" />
-          </div>
-          <h2 className="text-[17px] font-bold mb-2">חבר את מייל החברה</h2>
-          <p className="text-[13px] text-text-secondary mb-6 leading-relaxed">
-            התחברות חד-פעמית עם Google OAuth.
-          </p>
-          {diagnostics?.ready ? (
-            <a
-              href="/api/gmail/auth"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue text-white text-[14px] font-semibold hover:bg-blue/90 transition-colors"
-            >
-              התחבר עם Google
-            </a>
-          ) : (
-            <Link
-              href="/settings"
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brass text-white text-[14px] font-semibold hover:bg-brass/90"
-            >
-              להגדרות — תקן חיבור
-            </Link>
-          )}
-        </Card>
-        {diagnostics && (
-          <Card className="p-5">
-            <h3 className="text-[14px] font-bold mb-3">בדיקת מוכנות</h3>
-            <GmailDiagnosticsPanel diagnostics={diagnostics} />
-          </Card>
-        )}
-      </div>
+        <div className="w-14 h-14 rounded-2xl bg-blue/10 flex items-center justify-center mx-auto mb-4">
+          <Mail className="w-7 h-7 text-blue" />
+        </div>
+        <h2 className="text-[17px] font-bold mb-2">מייל המשרד לא מחובר</h2>
+        <p className="text-[13px] text-text-secondary mb-6 leading-relaxed">
+          חיבור Gmail מתבצע במסך ייעודי אחד — בלי דפדוף בין מסכים.
+        </p>
+        <Link
+          href="/connect/gmail"
+          className="inline-flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-3.5 rounded-xl bg-blue text-white text-[14px] font-semibold hover:bg-blue/90"
+        >
+          חבר Gmail
+        </Link>
+        <Link href="/settings" className="inline-block mt-4 text-[12px] text-text-tertiary hover:text-emerald">
+          או דרך הגדרות →
+        </Link>
+      </Card>
     );
   }
 

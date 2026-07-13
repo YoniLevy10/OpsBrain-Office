@@ -15,8 +15,6 @@ export async function GmailConnectPanel() {
     <Card className="p-5">
       <SectionHeading title="Gmail — מייל החברה" subtitle="OAuth 2.0 · קריאה ושליחה" />
       <div className="mt-4 space-y-4">
-        <GmailDiagnosticsPanel diagnostics={diagnostics} />
-
         {status.connected ? (
           <div className="p-3 rounded-xl bg-emerald/[0.06] border border-emerald/20">
             <div className="flex items-center gap-2 text-[13px] font-semibold text-emerald">
@@ -28,24 +26,27 @@ export async function GmailConnectPanel() {
               פתח תיבת דואר →
             </Link>
           </div>
-        ) : diagnostics.ready ? (
-          <a
-            href="/api/gmail/auth"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-blue text-white text-[13px] font-semibold hover:bg-blue/90"
-          >
-            התחבר עם Google
-          </a>
         ) : (
-          <p className="text-[12px] text-rose text-center py-2">
-            תקן את הסעיפים האדומים למעלה, עשה Redeploy, ואז לחץ התחבר.
-          </p>
+          <>
+            <GmailDiagnosticsPanel diagnostics={diagnostics} />
+            {diagnostics.ready ? (
+              <Link
+                href="/connect/gmail"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-blue text-white text-[13px] font-semibold hover:bg-blue/90"
+              >
+                מעבר למסך חיבור Gmail
+              </Link>
+            ) : (
+              <p className="text-[12px] text-rose text-center py-2">
+                תקן את הסעיפים האדומים, Redeploy, ורענן.
+              </p>
+            )}
+          </>
         )}
 
-        {diagnostics.redirectUri && (
+        {diagnostics.redirectUri && !status.connected && (
           <div className="p-3 rounded-xl bg-blue/[0.04] border border-blue/15">
-            <p className="text-[11px] font-semibold text-text-secondary mb-1">
-              העתק ל-Google Cloud → Credentials → OAuth Client → Authorized redirect URIs:
-            </p>
+            <p className="text-[11px] font-semibold text-text-secondary mb-1">Redirect URI ל-Google Cloud:</p>
             <code className="text-[10px] text-text-primary break-all block" dir="ltr">
               {diagnostics.redirectUri}
             </code>
@@ -53,13 +54,12 @@ export async function GmailConnectPanel() {
         )}
 
         <p className="text-[11px] text-text-tertiary leading-relaxed">
-          Google Cloud:{" "}
           <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="text-blue hover:underline inline-flex items-center gap-0.5">
-            Credentials
+            Google Cloud Credentials
             <ExternalLink className="w-3 h-3" />
           </a>
           {" · "}
-          OAuth consent screen → הוסף את המייל שלך ב-Test users
+          OAuth consent screen → Test users
         </p>
       </div>
     </Card>
