@@ -74,6 +74,28 @@ function parseFrom(from?: string) {
   return (match?.[1] ?? from).trim().replace(/"/g, "");
 }
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  invalid_state: "ההתחברות נכשלה (סשן פג) — נסה שוב מ«הגדרות» או «מייל»",
+  missing_code: "Google לא החזיר קוד אישור — נסה שוב",
+  redirect_uri_mismatch:
+    "כתובת Callback לא תואמת — ודא ש-GOOGLE_REDIRECT_URI ו-NEXT_PUBLIC_APP_URL מוגדרים ל-ops-brain-office.vercel.app",
+  missing_service_role:
+    "חסר SUPABASE_SERVICE_ROLE_KEY ב-Vercel — הוסף מ-Supabase והרץ Redeploy",
+  oauth_failed: "שגיאה בהשלמת החיבור ל-Google",
+  access_denied: "הגישה נדחתה — אשר את ההרשאות ב-Google",
+};
+
+function formatOAuthError(code: string, detail?: string | null): string {
+  const base = OAUTH_ERROR_MESSAGES[code] ?? decodeURIComponent(code);
+  if (detail && !OAUTH_ERROR_MESSAGES[code]) {
+    return `${base}: ${decodeURIComponent(detail)}`;
+  }
+  if (detail && code === "oauth_failed") {
+    return `${base}: ${decodeURIComponent(detail)}`;
+  }
+  return base;
+}
+
 export function EmailInboxContent({
   configured,
   connected,
@@ -107,15 +129,16 @@ export function EmailInboxContent({
   }, [clients]);
 
   const urlError = searchParams.get("error");
+  const urlErrorDetail = searchParams.get("detail");
   const urlConnected = searchParams.get("connected");
 
   useEffect(() => {
-    if (urlError) setError(decodeURIComponent(urlError));
+    if (urlError) setError(formatOAuthError(urlError, urlErrorDetail));
     if (urlConnected) {
       setSendSuccess("Gmail חובר בהצלחה!");
       router.replace("/email");
     }
-  }, [urlError, urlConnected, router]);
+  }, [urlError, urlErrorDetail, urlConnected, router]);
 
   const loadMessages = useCallback(async (q?: string, append = false, pageToken?: string) => {
     if (append) setLoadingMore(true);

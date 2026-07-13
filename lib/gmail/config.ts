@@ -17,16 +17,20 @@ export const GOOGLE_AUTH_BASE = "https://accounts.google.com/o/oauth2/v2/auth";
 export const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 export const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 
+/** Public app URL — always prefer explicit env over VERCEL_URL (deployment-specific). */
+export function getGmailAppBaseUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  if (explicit) return explicit;
+  const vercel = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+  return vercel ?? "http://localhost:3000";
+}
+
 export function gmailConfigFromEnv(): GmailEnvironment | null {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri =
-    process.env.GOOGLE_REDIRECT_URI ||
-    (process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}/api/gmail/callback`
-      : process.env.NEXT_PUBLIC_APP_URL
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/api/gmail/callback`
-        : null);
+    process.env.GOOGLE_REDIRECT_URI?.replace(/\/$/, "") ||
+    `${getGmailAppBaseUrl()}/api/gmail/callback`;
 
   if (!clientId || !clientSecret || !redirectUri) return null;
   return { clientId, clientSecret, redirectUri };
@@ -34,11 +38,4 @@ export function gmailConfigFromEnv(): GmailEnvironment | null {
 
 export function isGmailConfigured(): boolean {
   return gmailConfigFromEnv() !== null;
-}
-
-export function getGmailAppBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
-  );
 }

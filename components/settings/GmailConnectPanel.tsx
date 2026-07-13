@@ -38,12 +38,14 @@ export async function GmailConnectPanel() {
             </Link>
           </div>
         ) : configured ? (
+          accessOk ? (
           <a
             href="/api/gmail/auth"
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-blue text-white text-[13px] font-semibold hover:bg-blue/90"
           >
             התחבר עם Google
           </a>
+          ) : null
         ) : null}
         <p className="text-[11px] text-text-tertiary leading-relaxed">
           הגדר ב-{" "}
@@ -51,7 +53,10 @@ export async function GmailConnectPanel() {
             Google Cloud Console
             <ExternalLink className="w-3 h-3" />
           </a>
-          : Gmail API + OAuth Client. Redirect: <code className="text-[10px]">/api/gmail/callback</code>
+          : Gmail API + OAuth Client. Redirect:{" "}
+          <code className="text-[10px]">https://ops-brain-office.vercel.app/api/gmail/callback</code>
+          {" · "}
+          ב-Vercel: <code className="text-[10px]">NEXT_PUBLIC_APP_URL</code> + <code className="text-[10px]">GOOGLE_REDIRECT_URI</code>
         </p>
       </div>
     </Card>

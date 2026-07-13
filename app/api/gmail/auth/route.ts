@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertAppAccess } from "@/lib/app-access";
 import { isGmailConfigured, getGmailAuthUrl } from "@/lib/gmail";
+import { createOAuthState } from "@/lib/oauth-state";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,11 @@ export async function GET() {
       );
     }
 
-    const state = crypto.randomUUID();
+    const state = createOAuthState();
     const url = getGmailAuthUrl(state);
 
     const res = NextResponse.redirect(url);
+    // Cookie fallback for older flows; primary validation is signed state param
     res.cookies.set("gmail_oauth_state", state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
