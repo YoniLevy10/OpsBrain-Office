@@ -25,12 +25,16 @@ export function decryptSecret(stored: string): string {
   if (!stored.startsWith("v1:")) return stored;
   const key = getKey();
   if (!key) return stored;
-  const [, ivB64, tagB64, dataB64] = stored.split(":");
-  const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"));
-  decipher.setAuthTag(Buffer.from(tagB64, "base64"));
-  const dec = Buffer.concat([
-    decipher.update(Buffer.from(dataB64, "base64")),
-    decipher.final(),
-  ]);
-  return dec.toString("utf8");
+  try {
+    const [, ivB64, tagB64, dataB64] = stored.split(":");
+    const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"));
+    decipher.setAuthTag(Buffer.from(tagB64, "base64"));
+    const dec = Buffer.concat([
+      decipher.update(Buffer.from(dataB64, "base64")),
+      decipher.final(),
+    ]);
+    return dec.toString("utf8");
+  } catch {
+    throw new Error("טוקן מוצפן עם מפתח שונה — נתק Gmail וחבר מחדש");
+  }
 }

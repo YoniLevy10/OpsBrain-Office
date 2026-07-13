@@ -45,7 +45,6 @@ function decryptRow(row: GmailConnectionRow): GmailConnectionRow {
 }
 
 export async function saveGmailConnection(tokens: GmailTokenSet): Promise<void> {
-  await assertAppAccess();
   const sb = gmailDb();
 
   const { error } = await sb.from("ob_gmail_connection").upsert(

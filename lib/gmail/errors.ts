@@ -23,8 +23,21 @@ export function parseGmailApiError(body: string, status: number): GmailError {
     const data = JSON.parse(body) as {
       error?: { message?: string; code?: number; status?: string };
     };
-    const msg = data.error?.message || body.slice(0, 200);
-    return new GmailError(msg, status);
+    const raw = data.error?.message || body.slice(0, 200);
+
+    if (raw.includes("Gmail API has not been used") || raw.includes("gmail.googleapis.com")) {
+      const projectMatch = raw.match(/project (\d+)/);
+      const projectId = projectMatch?.[1];
+      const enableUrl = projectId
+        ? `https://console.developers.google.com/apis/api/gmail.googleapis.com/overview?project=${projectId}`
+        : "https://console.cloud.google.com/apis/library/gmail.googleapis.com";
+      return new GmailError(
+        `Gmail API לא מופעל ב-Google Cloud — היכנס ל-APIs & Services → Library → Gmail API → Enable. אחרי הפעלה המתן 2–5 דקות ורענן. ${enableUrl}`,
+        status
+      );
+    }
+
+    return new GmailError(raw, status);
   } catch {
     return new GmailError(`שגיאת Gmail API (${status})`, status);
   }

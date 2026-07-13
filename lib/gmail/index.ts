@@ -41,3 +41,4 @@ export {
 export { sendGiDocumentViaGmail } from "./send-document";
 export { sanitizeEmailHtml, extractEmailAddress } from "./sanitize";
 export { mapPool } from "./concurrency";
+export { getGmailDiagnostics, type GmailDiagnostics } from "./diagnostics";

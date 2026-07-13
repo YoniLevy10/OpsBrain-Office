@@ -1,7 +1,6 @@
 import { isGreenInvoiceConfigured } from "../greeninvoice";
 import { getGmailConnectionStatus } from "../gmail/store";
 import {
-  buildDocumentPayload,
   buildPaymentFormPayload,
 } from "./build-payload";
 import {
@@ -10,11 +9,11 @@ import {
   type IssuableDocumentKind,
 } from "./catalog";
 import {
-  createDocument,
   getDocumentDownloadLinks,
   previewDocument,
   sendDocument,
 } from "./documents";
+import { createDocumentResilient } from "./create-document";
 import { getPaymentFormUrl, getWebhookNotifyUrl } from "./payments";
 import {
   getClientGiId,
@@ -143,10 +142,14 @@ export async function issueDocument(
 
   const catalog = getCatalogItem(kind);
   const giClientId = input.giClientId ?? (await resolveGiClientId(input.clientId));
-  const payload = buildDocumentPayload(kind, { ...input, giClientId });
+  // payload built inside createDocumentResilient with fallbacks
 
   try {
-    const doc = await createDocument(payload);
+    const doc = await createDocumentResilient({
+      kind,
+      input,
+      giClientId,
+    });
     return afterDocumentCreated(doc, {
       actionType: kind,
       clientId: input.clientId,
