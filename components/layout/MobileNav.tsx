@@ -24,7 +24,7 @@ const mainItems = [
   { href: "/", label: "בקרה", icon: LayoutDashboard },
   { href: "/clients", label: "לקוחות", icon: Users },
   { href: "/email", label: "מייל", icon: Mail },
-  { href: "/morning", label: "חשבונית", icon: FileText, featured: true },
+  { href: "/morning", label: "חשבונית", icon: FileText },
 ];
 
 const moreItems = [
@@ -53,34 +53,6 @@ export function MobileNav() {
           {mainItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
-
-            if (item.featured) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label="חשבונית ירוקה"
-                  className="relative flex flex-col items-center justify-end gap-1 flex-1 min-w-0 pb-2 min-h-[44px] -mt-3"
-                >
-                  <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-all ${
-                      isActive
-                        ? "bg-emerald text-white shadow-emerald/30 scale-105"
-                        : "bg-emerald/90 text-white shadow-emerald/20 hover:bg-emerald"
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2.25} />
-                  </div>
-                  <span
-                    className={`text-[10px] leading-none truncate max-w-full ${
-                      isActive ? "font-bold text-emerald" : "font-semibold text-text-secondary"
-                    }`}
-                  >
-                    {item.label}
-                  </span>
-                </Link>
-              );
-            }
 
             return (
               <Link
