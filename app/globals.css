@@ -172,18 +172,69 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 8px;
 }
 
+.email-body {
+  word-break: break-word;
+}
+
+/* Email reader — mobile fullscreen + expanded text */
+@keyframes email-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.email-reader-sheet {
+  animation: email-slide-up 0.28s ease-out;
+}
+
+.email-reader-body .email-html {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.email-reader-body .email-plain-text {
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.email-body-expanded .email-html,
+.email-body-expanded .email-plain-text {
+  font-size: 17px;
+  line-height: 1.75;
+}
+
+.email-reader-expanded .email-reader-body {
+  max-width: 48rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
 .email-html img {
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
 }
 
 .email-html a {
   color: var(--accent-blue);
   text-decoration: underline;
+  word-break: break-all;
 }
 
-.email-body {
-  word-break: break-word;
+.email-html table {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+.email-list-item-active {
+  background: color-mix(in srgb, var(--accent-blue) 8%, transparent);
+  border-inline-end: 3px solid var(--accent-blue);
 }
 
 @media (prefers-reduced-motion: reduce) {

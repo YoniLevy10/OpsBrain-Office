@@ -12,9 +12,8 @@ import {
   Loader2,
   Wifi,
   ExternalLink,
-  Reply,
   ChevronDown,
-  User,
+  ChevronLeft,
 } from "lucide-react";
 import { Card, Badge, SectionHeading } from "@/components/ui/Primitives";
 import Link from "next/link";
@@ -25,6 +24,7 @@ import {
   sendInboxEmail,
 } from "@/app/email/actions";
 import { extractEmailAddress } from "@/lib/gmail/sanitize";
+import { EmailReader } from "@/components/email/EmailReader";
 
 type MessageItem = {
   id: string;
@@ -55,7 +55,7 @@ type Props = {
   accessDenied?: boolean;
 };
 
-function formatDate(dateStr?: string) {
+function formatDateShort(dateStr?: string) {
   if (!dateStr) return "";
   try {
     return new Date(dateStr).toLocaleString("he-IL", {
@@ -125,6 +125,9 @@ export function EmailInboxContent({
   const [sending, setSending] = useState(false);
   const [sendSuccess, setSendSuccess] = useState("");
 
+  const msgParam = searchParams.get("msg");
+  const readerOpen = Boolean(selected || (detailLoading && msgParam));
+
   const clientByEmail = useMemo(() => {
     const map = new Map<string, ClientLink>();
     for (const c of clients) {
@@ -169,23 +172,44 @@ export function EmailInboxContent({
     if (connected && !accessDenied) loadMessages();
   }, [connected, accessDenied, loadMessages]);
 
-  async function openMessage(id: string) {
-    setDetailLoading(true);
+  const closeReader = useCallback(() => {
     setSelected(null);
-    try {
-      const data = await fetchInboxMessage(id);
-      if (data.ok && data.message) {
-        setSelected(data.message);
-        setMessages((prev) =>
-          prev.map((m) => (m.id === id ? { ...m, unread: false } : m))
-        );
-      } else if (data.error) {
-        setError(data.error);
+    const q = searchParams.get("q");
+    router.replace(q ? `/email?q=${encodeURIComponent(q)}` : "/email", { scroll: false });
+  }, [router, searchParams]);
+
+  const openMessage = useCallback(
+    async (id: string) => {
+      setDetailLoading(true);
+      setSelected(null);
+      const q = searchParams.get("q");
+      const path = q
+        ? `/email?msg=${id}&q=${encodeURIComponent(q)}`
+        : `/email?msg=${id}`;
+      router.replace(path, { scroll: false });
+
+      try {
+        const data = await fetchInboxMessage(id);
+        if (data.ok && data.message) {
+          setSelected(data.message);
+          setMessages((prev) =>
+            prev.map((m) => (m.id === id ? { ...m, unread: false } : m))
+          );
+        } else if (data.error) {
+          setError(data.error);
+          closeReader();
+        }
+      } finally {
+        setDetailLoading(false);
       }
-    } finally {
-      setDetailLoading(false);
-    }
-  }
+    },
+    [router, searchParams, closeReader]
+  );
+
+  useEffect(() => {
+    if (!connected || !msgParam || selected?.id === msgParam || detailLoading) return;
+    openMessage(msgParam);
+  }, [connected, msgParam, selected?.id, detailLoading, openMessage]);
 
   async function handleSend() {
     setSending(true);
@@ -224,7 +248,9 @@ export function EmailInboxContent({
   function startReply() {
     if (!selected) return;
     setComposeTo(parseFrom(selected.from));
-    setComposeSubject(selected.subject?.startsWith("Re:") ? selected.subject : `Re: ${selected.subject ?? ""}`);
+    setComposeSubject(
+      selected.subject?.startsWith("Re:") ? selected.subject : `Re: ${selected.subject ?? ""}`
+    );
     setComposeBody(`\n\n---\n${selected.bodyText ?? selected.snippet ?? ""}`);
     setComposeOpen(true);
   }
@@ -291,8 +317,22 @@ export function EmailInboxContent({
     );
   }
 
+  const selectedClient = selected ? matchedClient(selected.from) : undefined;
+
   return (
     <div className="space-y-4">
+      {/* Mobile fullscreen reader */}
+      <div className="lg:hidden">
+        <EmailReader
+          variant="sheet"
+          message={selected}
+          loading={detailLoading}
+          client={selectedClient ? { id: selectedClient.id, company: selectedClient.company } : undefined}
+          onClose={readerOpen ? closeReader : undefined}
+          onReply={startReply}
+        />
+      </div>
+
       <Card className="overflow-hidden">
         <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-l from-blue/[0.06] to-transparent">
           <div className="flex items-center gap-3">
@@ -313,7 +353,12 @@ export function EmailInboxContent({
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={() => { setComposeOpen(true); setComposeTo(""); setComposeSubject(""); setComposeBody(""); }}
+              onClick={() => {
+                setComposeOpen(true);
+                setComposeTo("");
+                setComposeSubject("");
+                setComposeBody("");
+              }}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue text-white text-[12.5px] font-semibold hover:bg-blue/90"
             >
               <Send className="w-3.5 h-3.5" />
@@ -377,14 +422,14 @@ export function EmailInboxContent({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,360px)_1fr] gap-4 min-h-[min(70dvh,640px)]">
-        <Card className="overflow-hidden flex flex-col">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_1fr] gap-4 lg:min-h-[min(72dvh,680px)]">
+        <Card className={`overflow-hidden flex-col ${readerOpen ? "hidden lg:flex" : "flex"}`}>
           <div className="px-4 py-3 border-b border-border-soft flex items-center gap-2">
             <Inbox className="w-4 h-4 text-text-tertiary" />
             <span className="text-[13px] font-semibold">תיבת דואר נכנס</span>
             <Badge label={String(messages.length)} />
           </div>
-          <div className="flex-1 overflow-y-auto divide-y divide-border-soft">
+          <div className="flex-1 overflow-y-auto divide-y divide-border-soft max-h-[min(65dvh,600px)] lg:max-h-none">
             {loading && messages.length === 0 ? (
               <div className="flex items-center justify-center py-12 text-text-tertiary">
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -394,25 +439,46 @@ export function EmailInboxContent({
             ) : (
               messages.map((m) => {
                 const client = matchedClient(m.from);
+                const isActive = selected?.id === m.id;
                 return (
                   <button
                     key={m.id}
                     type="button"
                     onClick={() => openMessage(m.id)}
-                    className={`w-full text-start px-4 py-3 hover:bg-surface-hover transition-colors ${
-                      selected?.id === m.id ? "bg-blue/[0.06] border-r-2 border-blue" : ""
+                    className={`w-full text-start px-4 py-3.5 hover:bg-surface-hover active:bg-surface-hover transition-colors min-h-[72px] ${
+                      isActive ? "email-list-item-active" : ""
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <span className={`text-[13px] truncate ${m.unread ? "font-bold" : "font-medium"}`}>
-                        {client ? client.company : parseFrom(m.from)}
-                      </span>
-                      <span className="text-[10px] text-text-tertiary shrink-0">{formatDate(m.date)}</span>
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[14px] font-bold ${
+                          m.unread ? "bg-blue/15 text-blue" : "bg-surface-hover text-text-secondary"
+                        }`}
+                      >
+                        {(client?.company ?? parseFrom(m.from)).charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span
+                            className={`text-[13.5px] truncate ${m.unread ? "font-bold" : "font-medium"}`}
+                          >
+                            {client ? client.company : parseFrom(m.from)}
+                          </span>
+                          <span className="text-[10px] text-text-tertiary shrink-0">
+                            {formatDateShort(m.date)}
+                          </span>
+                        </div>
+                        <div
+                          className={`text-[12.5px] truncate ${m.unread ? "font-semibold text-text-primary" : "text-text-secondary"}`}
+                        >
+                          {m.subject || "(ללא נושא)"}
+                        </div>
+                        <div className="text-[11px] text-text-tertiary line-clamp-2 mt-0.5 leading-snug">
+                          {m.snippet}
+                        </div>
+                      </div>
+                      <ChevronLeft className="w-4 h-4 text-text-tertiary shrink-0 mt-2 lg:hidden" />
                     </div>
-                    <div className={`text-[12.5px] truncate ${m.unread ? "font-semibold" : ""}`}>
-                      {m.subject || "(ללא נושא)"}
-                    </div>
-                    <div className="text-[11px] text-text-tertiary truncate mt-0.5">{m.snippet}</div>
                   </button>
                 );
               })
@@ -424,67 +490,31 @@ export function EmailInboxContent({
                 type="button"
                 onClick={() => loadMessages(search, true, nextPageToken)}
                 disabled={loadingMore}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl border border-border text-[12px] font-medium hover:bg-surface-hover disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 rounded-xl border border-border text-[12px] font-medium hover:bg-surface-hover disabled:opacity-50"
               >
-                {loadingMore ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                {loadingMore ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
                 טען עוד
               </button>
             </div>
           )}
         </Card>
 
-        <Card className="overflow-hidden flex flex-col">
-          {detailLoading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-text-tertiary" />
-            </div>
-          ) : !selected ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-text-tertiary">
-              <Mail className="w-10 h-10 mb-3 opacity-40" />
-              <p className="text-[14px]">בחר הודעה מהרשימה לצפייה</p>
-            </div>
-          ) : (
-            <>
-              <div className="px-5 py-4 border-b border-border-soft">
-                <h3 className="text-[15px] font-bold leading-snug">{selected.subject || "(ללא נושא)"}</h3>
-                <div className="mt-2 space-y-1 text-[12px] text-text-secondary">
-                  <div><span className="text-text-tertiary">מ: </span>{selected.from}</div>
-                  <div><span className="text-text-tertiary">אל: </span>{selected.to}</div>
-                  <div className="text-text-tertiary">{formatDate(selected.date)}</div>
-                </div>
-                {matchedClient(selected.from) && (
-                  <Link
-                    href={`/clients/${matchedClient(selected.from)!.id}`}
-                    className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald/10 text-emerald text-[11px] font-semibold hover:bg-emerald/15"
-                  >
-                    <User className="w-3 h-3" />
-                    {matchedClient(selected.from)!.company}
-                  </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={startReply}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-[12px] font-medium hover:bg-surface-hover"
-                >
-                  <Reply className="w-3.5 h-3.5" />
-                  השב
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5 email-body">
-                {selected.bodyHtml ? (
-                  <div
-                    className="prose prose-sm max-w-none text-[13px] leading-relaxed email-html"
-                    dangerouslySetInnerHTML={{ __html: selected.bodyHtml }}
-                  />
-                ) : (
-                  <pre className="whitespace-pre-wrap text-[13px] font-sans leading-relaxed text-text-primary">
-                    {selected.bodyText ?? selected.snippet ?? ""}
-                  </pre>
-                )}
-              </div>
-            </>
-          )}
-        </Card>
+        {/* Desktop reader panel */}
+        <div className="hidden lg:flex flex-col min-h-0">
+          <EmailReader
+            variant="panel"
+            message={selected}
+            loading={detailLoading}
+            client={
+              selectedClient ? { id: selectedClient.id, company: selectedClient.company } : undefined
+            }
+            onReply={startReply}
+          />
+        </div>
       </div>
 
       {composeOpen && (
@@ -492,7 +522,11 @@ export function EmailInboxContent({
           <Card className="w-full max-w-lg p-5 space-y-4 max-h-[85dvh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <SectionHeading title="כתיבת מייל" subtitle={`מ: ${email}`} />
-              <button type="button" onClick={() => setComposeOpen(false)} className="p-2 rounded-lg hover:bg-surface-hover">
+              <button
+                type="button"
+                onClick={() => setComposeOpen(false)}
+                className="p-2 rounded-lg hover:bg-surface-hover"
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
