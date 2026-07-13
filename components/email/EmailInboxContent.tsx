@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Mail,
@@ -126,7 +126,14 @@ export function EmailInboxContent({
   const [sendSuccess, setSendSuccess] = useState("");
 
   const msgParam = searchParams.get("msg");
-  const readerOpen = Boolean(selected || (detailLoading && msgParam));
+  const readerOpen = Boolean(selected || detailLoading);
+  const loadGenRef = useRef(0);
+  const readerHistoryRef = useRef(false);
+  const readerPushedRef = useRef(false);
+  const closingReaderRef = useRef(false);
+  const deepLinkOpenedRef = useRef(false);
+  const isMobileViewport = () =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
 
   const clientByEmail = useMemo(() => {
     const map = new Map<string, ClientLink>();
@@ -172,24 +179,67 @@ export function EmailInboxContent({
     if (connected && !accessDenied) loadMessages();
   }, [connected, accessDenied, loadMessages]);
 
+  const syncReaderUrl = useCallback((msgId: string | null) => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (msgId) url.searchParams.set("msg", msgId);
+    else url.searchParams.delete("msg");
+    const next = `${url.pathname}${url.search}`;
+    window.history.replaceState(
+      msgId ? { emailReader: true } : window.history.state,
+      "",
+      next
+    );
+  }, []);
+
   const closeReader = useCallback(() => {
+    loadGenRef.current += 1;
     setSelected(null);
-    const q = searchParams.get("q");
-    router.replace(q ? `/email?q=${encodeURIComponent(q)}` : "/email", { scroll: false });
-  }, [router, searchParams]);
+    setDetailLoading(false);
+
+    if (readerHistoryRef.current) {
+      readerHistoryRef.current = false;
+      if (readerPushedRef.current) {
+        readerPushedRef.current = false;
+        closingReaderRef.current = true;
+        window.history.back();
+        return;
+      }
+    }
+
+    syncReaderUrl(null);
+  }, [syncReaderUrl]);
 
   const openMessage = useCallback(
-    async (id: string) => {
+    async (id: string, opts?: { viaDeepLink?: boolean }) => {
+      const gen = ++loadGenRef.current;
       setDetailLoading(true);
       setSelected(null);
-      const q = searchParams.get("q");
-      const path = q
-        ? `/email?msg=${id}&q=${encodeURIComponent(q)}`
-        : `/email?msg=${id}`;
-      router.replace(path, { scroll: false });
+
+      if (isMobileViewport()) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("msg", id);
+        const next = `${url.pathname}${url.search}`;
+
+        if (!readerHistoryRef.current) {
+          if (opts?.viaDeepLink) {
+            window.history.replaceState({ emailReader: true }, "", next);
+            readerPushedRef.current = false;
+          } else {
+            window.history.pushState({ emailReader: true }, "", next);
+            readerPushedRef.current = true;
+          }
+          readerHistoryRef.current = true;
+        } else {
+          window.history.replaceState({ emailReader: true }, "", next);
+        }
+      } else {
+        syncReaderUrl(id);
+      }
 
       try {
         const data = await fetchInboxMessage(id);
+        if (gen !== loadGenRef.current) return;
         if (data.ok && data.message) {
           setSelected(data.message);
           setMessages((prev) =>
@@ -200,16 +250,36 @@ export function EmailInboxContent({
           closeReader();
         }
       } finally {
-        setDetailLoading(false);
+        if (gen === loadGenRef.current) setDetailLoading(false);
       }
     },
-    [router, searchParams, closeReader]
+    [closeReader, syncReaderUrl]
   );
 
   useEffect(() => {
-    if (!connected || !msgParam || selected?.id === msgParam || detailLoading) return;
-    openMessage(msgParam);
-  }, [connected, msgParam, selected?.id, detailLoading, openMessage]);
+    if (!connected || !msgParam || deepLinkOpenedRef.current) return;
+    deepLinkOpenedRef.current = true;
+    openMessage(msgParam, { viaDeepLink: true });
+  }, [connected, msgParam, openMessage]);
+
+  useEffect(() => {
+    function onPopState() {
+      if (closingReaderRef.current) {
+        closingReaderRef.current = false;
+        syncReaderUrl(null);
+        return;
+      }
+      if (!readerHistoryRef.current && !selected && !detailLoading) return;
+      loadGenRef.current += 1;
+      readerHistoryRef.current = false;
+      readerPushedRef.current = false;
+      setSelected(null);
+      setDetailLoading(false);
+      syncReaderUrl(null);
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [selected, detailLoading, syncReaderUrl]);
 
   async function handleSend() {
     setSending(true);
@@ -328,7 +398,7 @@ export function EmailInboxContent({
           message={selected}
           loading={detailLoading}
           client={selectedClient ? { id: selectedClient.id, company: selectedClient.company } : undefined}
-          onClose={readerOpen ? closeReader : undefined}
+          onClose={closeReader}
           onReply={startReply}
         />
       </div>

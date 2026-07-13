@@ -63,6 +63,13 @@ export function EmailReader({ message, loading, client, variant, onClose, onRepl
   const [showMeta, setShowMeta] = useState(false);
 
   useEffect(() => {
+    if (!message) {
+      setExpanded(false);
+      setShowMeta(false);
+    }
+  }, [message]);
+
+  useEffect(() => {
     if (variant !== "sheet" || !message) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
