@@ -63,6 +63,7 @@ export type CreateDocumentRequest = {
   date?: string;
   dueDate?: string;
   signed?: boolean;
+  rounding?: boolean;
   client: MorningClientPayload;
   income: MorningIncomeLine[];
   payment?: MorningPaymentLine[];

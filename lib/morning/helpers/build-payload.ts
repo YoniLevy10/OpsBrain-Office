@@ -1,5 +1,5 @@
-import { getMorningPluginId } from "../config";
-import type { PaymentTypeCode } from "../constants";
+import { getMorningPluginId, isMorningSignedEnabled } from "../config";
+import { VAT_TYPES, type PaymentTypeCode } from "../constants";
 import type {
   CreateDocumentRequest,
   CreateInvoiceInput,
@@ -13,20 +13,23 @@ import type { DocumentCatalogItem, DocumentKind } from "./catalog";
 import { getCatalogItem } from "./catalog";
 import type { DocumentTypeCode } from "../constants";
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
+/** Israel business date — avoids UTC midnight shifting payment date to "tomorrow" */
+function todayIsrael(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date());
 }
 
 export function buildClientPayload(input: {
   clientName: string;
   clientEmail?: string;
   giClientId?: string;
+  forceAdd?: boolean;
 }): MorningClientPayload {
+  const useExisting = Boolean(input.giClientId) && !input.forceAdd;
   const client: MorningClientPayload = {
     name: input.clientName.trim(),
-    add: !input.giClientId,
+    add: !useExisting,
   };
-  if (input.giClientId) client.id = input.giClientId;
+  if (useExisting && input.giClientId) client.id = input.giClientId;
   if (input.clientEmail?.trim()) client.emails = [input.clientEmail.trim()];
   return client;
 }
@@ -40,10 +43,15 @@ export function buildIncomeLine(
   return {
     description,
     quantity: 1,
-    price: amount,
+    price: roundMoney(amount),
     currency,
-    vatType: vatIncluded ? 1 : 0,
+    /** Row-level: 1 = price includes VAT, 0 = before VAT */
+    vatType: vatIncluded ? VAT_TYPES.VAT_INCLUDED : VAT_TYPES.BEFORE_VAT,
   };
+}
+
+function roundMoney(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 function baseDocumentFields(
@@ -52,15 +60,18 @@ function baseDocumentFields(
     clientName: string;
     clientEmail?: string;
     giClientId?: string;
+    forceAddClient?: boolean;
     amount: number;
     currency: string;
     description: string;
     project?: string;
     sendEmail?: boolean;
     linkedDocumentIds?: string[];
+    signed?: boolean;
   }
 ): CreateDocumentRequest {
   const description = input.description.trim() || input.project?.trim() || catalog.label;
+  const amount = roundMoney(input.amount);
 
   return {
     type: catalog.type,
@@ -68,11 +79,18 @@ function baseDocumentFields(
     remarks: input.project?.trim() || undefined,
     lang: "he",
     currency: input.currency as "ILS" | "USD",
-    vatType: catalog.vatIncluded ? 1 : 0,
-    date: today(),
-    signed: true,
-    client: buildClientPayload(input),
-    income: [buildIncomeLine(description, input.amount, input.currency, catalog.vatIncluded)],
+    /** Document-level: 0 = use business default VAT rules (Morning API requirement) */
+    vatType: VAT_TYPES.BEFORE_VAT,
+    date: todayIsrael(),
+    signed: input.signed ?? isMorningSignedEnabled(),
+    rounding: true,
+    client: buildClientPayload({
+      clientName: input.clientName,
+      clientEmail: input.clientEmail,
+      giClientId: input.giClientId,
+      forceAdd: input.forceAddClient,
+    }),
+    income: [buildIncomeLine(description, amount, input.currency, catalog.vatIncluded)],
     emailContent: input.sendEmail ? `מצורף ${catalog.label}: ${description}` : undefined,
     linkedDocumentIds: input.linkedDocumentIds,
   };
@@ -84,29 +102,33 @@ export function buildDocumentPayload(
     CreateInvoiceInput & {
       paymentType?: PaymentTypeCode;
       linkedDocumentIds?: string[];
+      signed?: boolean;
+      forceAddClient?: boolean;
     }
 ): CreateDocumentRequest {
   const catalog = getCatalogItem(kind);
   const currency = input.currency ?? "ILS";
+  const amount = roundMoney(input.amount);
   const payload = baseDocumentFields(catalog, {
     clientName: input.clientName,
     clientEmail: input.clientEmail,
     giClientId: input.giClientId,
-    amount: input.amount,
+    forceAddClient: input.forceAddClient,
+    amount,
     currency,
     description: input.description,
     project: input.project,
     sendEmail: input.sendEmail,
     linkedDocumentIds: input.linkedDocumentIds,
+    signed: input.signed,
   });
 
   if (catalog.needsPayment) {
-    const paymentDate = input.paymentDate ?? today();
     payload.payment = [
       {
-        date: paymentDate,
+        date: input.paymentDate ?? todayIsrael(),
         type: input.paymentType ?? 4,
-        price: input.amount,
+        price: amount,
         currency,
       },
     ];
@@ -126,6 +148,7 @@ export function buildRawDocumentPayload(
 ): CreateDocumentRequest {
   const vatIncluded = input.vatIncluded ?? false;
   const currency = input.currency ?? "ILS";
+  const amount = roundMoney(input.amount);
   const description = input.description?.trim() || input.project?.trim() || "מסמך";
   const payload: CreateDocumentRequest = {
     type,
@@ -133,20 +156,21 @@ export function buildRawDocumentPayload(
     remarks: input.project?.trim() || undefined,
     lang: "he",
     currency,
-    vatType: vatIncluded ? 1 : 0,
-    date: today(),
-    signed: true,
+    vatType: VAT_TYPES.BEFORE_VAT,
+    date: todayIsrael(),
+    signed: isMorningSignedEnabled(),
+    rounding: true,
     client: buildClientPayload(input),
-    income: [buildIncomeLine(description, input.amount, currency, vatIncluded)],
+    income: [buildIncomeLine(description, amount, currency, vatIncluded)],
     emailContent: input.sendEmail ? `מצורף: ${description}` : undefined,
   };
 
   if (input.needsPayment) {
     payload.payment = [
       {
-        date: input.paymentDate ?? today(),
+        date: input.paymentDate ?? todayIsrael(),
         type: input.paymentType ?? 4,
-        price: input.amount,
+        price: amount,
         currency,
       },
     ];
@@ -169,19 +193,20 @@ export function buildPaymentFormPayload(
 ): PaymentFormRequest {
   const currency = input.currency ?? "ILS";
   const description = input.description?.trim() || input.project?.trim() || "בקשת תשלום";
+  const amount = roundMoney(input.amount);
 
   return {
     description,
     type: 305,
     lang: "he",
     currency,
-    vatType: 0,
-    amount: input.amount,
+    vatType: VAT_TYPES.BEFORE_VAT,
+    amount,
     maxPayments: 1,
     pluginId: getMorningPluginId(),
     group: 100,
     client: buildClientPayload(input),
-    income: [buildIncomeLine(description, input.amount, currency, false)],
+    income: [buildIncomeLine(description, amount, currency, false)],
     remarks: input.project,
     notifyUrl,
     custom: input.incomeId ?? input.clientId ?? undefined,

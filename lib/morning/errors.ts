@@ -38,6 +38,17 @@ export function parseMorningApiError(body: string, status: number): MorningError
       data.message ||
       data.error ||
       `שגיאת Morning (${status})`;
+
+    if (
+      message.includes("לא צפויה") ||
+      message.toLowerCase().includes("unexpected error")
+    ) {
+      return new MorningError(
+        `${message} — נסה: (1) סכום כולל מע״מ לחשבונית+קבלה (2) הפעל חתימה דיגיטלית ב-Morning או הסר GREENINVOICE_SIGNED (3) ודא מנוי Best+`,
+        { status, errorCode: code }
+      );
+    }
+
     return new MorningError(message, { status, errorCode: code });
   } catch {
     return new MorningError(`שגיאת Morning (${status}): ${body.slice(0, 200)}`, { status });

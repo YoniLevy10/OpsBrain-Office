@@ -68,6 +68,11 @@ export function getMorningWebhookSecret(): string | undefined {
   return process.env.GREENINVOICE_WEBHOOK_SECRET || undefined;
 }
 
+/** Digital signature on issue — requires setup in Morning settings */
+export function isMorningSignedEnabled(): boolean {
+  return process.env.GREENINVOICE_SIGNED === "true";
+}
+
 /** Base app URL for notifyUrl on payment forms */
 export function getMorningAppBaseUrl(): string | undefined {
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;

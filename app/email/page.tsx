@@ -21,6 +21,7 @@ export default async function EmailPage() {
             configured={status.configured}
             connected={status.connected}
             email={status.email}
+            statusError={status.error}
             clients={clients.map((c) => ({ id: c.id, company: c.company, email: c.email }))}
             accessDenied={isAppAccessRequired() && !accessOk}
           />
