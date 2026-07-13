@@ -21,7 +21,7 @@ export async function GET() {
 
   const diag = await getGmailDiagnostics();
   if (!diag.ready) {
-    const failed = diag.items.filter((i) => !i.ok);
+    const failed = diag.items.filter((i) => i.severity === "blocker");
     return NextResponse.redirect(
       completeUrl(base, {
         status: "error",

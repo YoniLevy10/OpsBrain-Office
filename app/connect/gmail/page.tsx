@@ -44,7 +44,14 @@ export default async function GmailConnectPage() {
       <GmailDiagnosticsPanel diagnostics={diagnostics} />
 
       {diagnostics.ready ? (
-        <GmailConnectButton />
+        <>
+          <GmailConnectButton />
+          {!diagnostics.connected && (
+            <p className="text-[11px] text-text-tertiary text-center">
+              אחרי אישור Google יופיע מסך «הצליח» — לחץ «פתח תיבת דואר»
+            </p>
+          )}
+        </>
       ) : (
         <p className="text-[12px] text-rose text-center">
           תקן את הסעיפים האדומים למעלה ב-Vercel, עשה Redeploy, ורענן דף זה.
