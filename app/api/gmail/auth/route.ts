@@ -1,35 +1,36 @@
 import { NextResponse } from "next/server";
-import { assertAppAccess } from "@/lib/app-access";
-import { isGmailConfigured, getGmailAuthUrl } from "@/lib/gmail";
+import { isGmailConfigured, getGmailAuthUrl, getGmailAppBaseUrl } from "@/lib/gmail";
 import { createOAuthState } from "@/lib/oauth-state";
+import { getGmailDiagnostics } from "@/lib/gmail/diagnostics";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  try {
-    await assertAppAccess();
-    if (!isGmailConfigured()) {
-      return NextResponse.json(
-        { error: "Gmail לא מוגדר — הוסף GOOGLE_CLIENT_ID ו-GOOGLE_CLIENT_SECRET" },
-        { status: 400 }
-      );
-    }
+  const base = getGmailAppBaseUrl();
 
-    const state = createOAuthState();
-    const url = getGmailAuthUrl(state);
-
-    const res = NextResponse.redirect(url);
-    // Cookie fallback for older flows; primary validation is signed state param
-    res.cookies.set("gmail_oauth_state", state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 600,
-      path: "/",
-    });
-    return res;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "שגיאה";
-    return NextResponse.json({ error: msg }, { status: msg.includes("גישה נדחתה") ? 403 : 500 });
+  if (!isGmailConfigured()) {
+    return NextResponse.redirect(`${base}/email?error=not_configured`);
   }
+
+  const diag = await getGmailDiagnostics();
+  if (!diag.ready) {
+    const failed = diag.items.filter((i) => !i.ok && ["google_keys", "service_role", "gmail_table", "access"].includes(i.id));
+    const first = failed[0];
+    const code = first?.id === "service_role" ? "missing_service_role" : first?.id === "access" ? "access_required" : "setup_incomplete";
+    const detail = failed.map((f) => f.label).join(", ");
+    return NextResponse.redirect(`${base}/email?error=${code}&detail=${encodeURIComponent(detail)}`);
+  }
+
+  const state = createOAuthState();
+  const url = getGmailAuthUrl(state);
+
+  const res = NextResponse.redirect(url);
+  res.cookies.set("gmail_oauth_state", state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+  return res;
 }
